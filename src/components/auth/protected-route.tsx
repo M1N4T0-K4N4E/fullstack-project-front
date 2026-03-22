@@ -18,9 +18,10 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) {
       router.push(`${redirectTo}?callbackUrl=${encodeURIComponent(pathname)}`);
     } else if (allowedRoles && user && !allowedRoles.includes(user.role)) {
@@ -33,9 +34,9 @@ export function ProtectedRoute({
         router.push('/dashboard/user');
       }
     }
-  }, [isAuthenticated, user, pathname, redirectTo, allowedRoles, router]);
+  }, [isAuthenticated, user, pathname, redirectTo, allowedRoles, router, hasHydrated]);
 
-  if (!isAuthenticated) {
+  if (!hasHydrated || !isAuthenticated) {
     return null;
   }
 

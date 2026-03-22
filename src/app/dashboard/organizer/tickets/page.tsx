@@ -1,26 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import { useEventStore } from '@/store/event-store';
 import { useTicketStore } from '@/store/ticket-store';
 import { ticketsApi } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavHeader } from '@/components/shared/nav-header';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TicketIcon, Search, Filter, QrCode } from 'lucide-react';
+import { Ticket as TicketIcon, QrCode } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Ticket } from '@/types';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Ticket as TicketType } from '@/types';
 
 export default function OrganizerTicketsPage() {
   const { user } = useAuthStore();
   const { setEvents, getEventsByOrganizer } = useEventStore();
   const { setTickets } = useTicketStore();
   const [organizerEvents, setOrganizerEventsState] = useState<ReturnType<typeof getEventsByOrganizer>>([]);
-  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+  const [allTickets, setAllTickets] = useState<TicketType[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,80 +31,74 @@ export default function OrganizerTicketsPage() {
     if (user) {
       const events = getEventsByOrganizer(user.id);
       setOrganizerEventsState(events);
-
-      // Get all tickets for organizer's events
       const tickets = events.flatMap((e) => ticketsApi.getByEvent(e.id));
       setAllTickets(tickets);
       setLoading(false);
     }
   }, [user, getEventsByOrganizer]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'valid':
-        return 'bg-green-100 text-green-800';
-      case 'used':
-        return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'refunded':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const statusConfig: Record<string, string> = {
+    valid: 'bg-green-100 text-green-700',
+    used: 'bg-muted text-muted-foreground',
+    cancelled: 'bg-red-100 text-red-700',
+    refunded: 'bg-amber-100 text-amber-700',
   };
 
   return (
     <ProtectedRoute allowedRoles={['organizer']}>
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Event Tickets</h1>
-          <p className="text-muted-foreground">View tickets sold for your events</p>
-        </div>
+      <div className="w-full min-h-screen">
+        <NavHeader />
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>All Tickets</CardTitle>
-              <Badge variant="outline">{allTickets.length} total</Badge>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <h1 className="font-heading text-2xl font-bold">Event Tickets</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {allTickets.length} ticket{allTickets.length !== 1 ? 's' : ''} sold across {organizerEvents.length} event{organizerEvents.length !== 1 ? 's' : ''}
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : allTickets.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <TicketIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No tickets sold yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {allTickets.map((ticket) => (
-                  <div key={ticket.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold">{ticket.eventTitle}</p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{ticket.userName}</span>
-                        <span>{ticket.ticketType} x{ticket.quantity}</span>
-                        <span>฿{ticket.price.toLocaleString()}</span>
-                      </div>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+            </div>
+          ) : allTickets.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-14 text-center">
+              <TicketIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+              <p className="font-medium mb-1">No tickets sold yet</p>
+              <p className="text-sm text-muted-foreground">Tickets will appear here once purchased.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {allTickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="flex items-center gap-4 p-4 rounded-xl border bg-card"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{ticket.eventTitle}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                      <span>{ticket.userName}</span>
+                      <span>·</span>
+                      <span>{ticket.ticketType} ×{ticket.quantity}</span>
+                      <span>·</span>
+                      <span>฿{ticket.price.toLocaleString()}</span>
                     </div>
-                    <Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge>
-                    <Link href={`/tickets/${ticket.id}`}>
-                      <Button size="sm" variant="ghost">
-                        <QrCode className="w-4 h-4" />
-                      </Button>
-                    </Link>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <Badge className={`text-xs shrink-0 ${statusConfig[ticket.status]}`}>
+                    {ticket.status}
+                  </Badge>
+                  <Link href={`/tickets/${ticket.id}`} className="shrink-0">
+                    <Button size="icon" variant="ghost" className="h-8 w-8">
+                      <QrCode className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );

@@ -8,9 +8,8 @@ import { useEventStore } from '@/store/event-store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, MapPin, User, Eye, ArrowLeft, Share2, Ticket } from 'lucide-react';
+import { Calendar, MapPin, User, Eye, ArrowLeft, Share2, Ticket, Clock } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function EventDetailPage() {
@@ -25,23 +24,33 @@ export default function EventDetailPage() {
     }
   }, [params.id, setSelectedEvent]);
 
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+  };
+
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Skeleton className="h-64 w-full rounded-lg mb-6" />
-        <Skeleton className="h-8 w-1/2 mb-4" />
-        <Skeleton className="h-4 w-1/3 mb-2" />
-        <Skeleton className="h-4 w-1/4" />
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-72 w-full rounded-xl" />
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
       </div>
     );
   }
 
   if (!selectedEvent) {
     return (
-      <div className="container mx-auto py-8 px-4 text-center">
-        <h1 className="text-2xl font-bold mb-4">Event not found</h1>
+      <div className="container mx-auto px-4 py-20 text-center">
+        <p className="text-muted-foreground mb-4">Event not found</p>
         <Link href="/events">
-          <Button variant="outline">Back to Events</Button>
+          <Button variant="outline">Browse Events</Button>
         </Link>
       </div>
     );
@@ -50,169 +59,209 @@ export default function EventDetailPage() {
   const cheapestPrice = Math.min(...selectedEvent.ticketTypes.map((t) => t.price));
   const totalAvailable = selectedEvent.ticketTypes.reduce((sum, t) => sum + t.available, 0);
   const isPastEvent = new Date(selectedEvent.endDate) < new Date();
-
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-  };
+  const isSoldOut = totalAvailable === 0;
+  const isCancelled = selectedEvent.status === 'cancelled';
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Link href="/events" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Events
-      </Link>
+    <div className="w-full min-h-screen">
+      {/* Back nav */}
+      <div className="container mx-auto px-4 pt-6">
+        <Link
+          href="/events"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to events
+        </Link>
+      </div>
 
       {/* Banner */}
-      <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-        <img
-          src={selectedEvent.banner}
-          alt={selectedEvent.title}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Badge>{selectedEvent.category}</Badge>
-            {selectedEvent.featured && <Badge className="bg-amber-500">Featured</Badge>}
-            {selectedEvent.status === 'cancelled' && <Badge variant="destructive">Cancelled</Badge>}
+      <div className="relative mt-4">
+        <div className="h-56 md:h-80 lg:h-96 overflow-hidden">
+          <img
+            src={selectedEvent.banner}
+            alt={selectedEvent.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        </div>
+
+        {/* Overlaid info on banner */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 md:px-8 pb-6 md:pb-8">
+          <div className="container mx-auto">
+            <div className="flex flex-wrap gap-2 mb-3">
+              <Badge variant="secondary">{selectedEvent.category}</Badge>
+              {selectedEvent.featured && <Badge className="bg-amber-500">Featured</Badge>}
+              {isCancelled && <Badge variant="destructive">Cancelled</Badge>}
+              {isPastEvent && <Badge variant="outline">Ended</Badge>}
+            </div>
+            <h1 className="font-heading text-2xl md:text-4xl font-bold text-white tracking-tight">
+              {selectedEvent.title}
+            </h1>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">{selectedEvent.title}</h1>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>About This Event</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground whitespace-pre-wrap">{selectedEvent.description}</p>
+      {/* Body */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Main info */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Description */}
+            <section>
+              <h2 className="font-heading text-lg font-semibold mb-3">About</h2>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {selectedEvent.description}
+              </p>
+            </section>
 
-              <Separator />
+            <Separator />
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
+            {/* Details grid */}
+            <section>
+              <h2 className="font-heading text-lg font-semibold mb-4">Details</h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="flex gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="font-medium">Date & Time</p>
+                    <p className="text-sm font-medium">Date</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(selectedEvent.startDate), 'EEEE, MMMM d, yyyy')}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(selectedEvent.startDate), 'h:mm a')} - {format(new Date(selectedEvent.endDate), 'h:mm a')}
+                      {format(new Date(selectedEvent.startDate), 'EEE, MMM d, yyyy')}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div className="flex gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="font-medium">Venue</p>
+                    <p className="text-sm font-medium">Time</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(selectedEvent.startDate), 'h:mm a')} –{' '}
+                      {format(new Date(selectedEvent.endDate), 'h:mm a')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Venue</p>
                     <p className="text-sm text-muted-foreground">{selectedEvent.venue}</p>
-                    <p className="text-sm text-muted-foreground">{selectedEvent.address}</p>
+                    <p className="text-sm text-muted-foreground/70">{selectedEvent.address}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <User className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div className="flex gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="font-medium">Organizer</p>
+                    <p className="text-sm font-medium">Organizer</p>
                     <p className="text-sm text-muted-foreground">{selectedEvent.organizerName}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <Eye className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div className="flex gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="font-medium">Views</p>
+                    <p className="text-sm font-medium">Views</p>
                     <p className="text-sm text-muted-foreground">{selectedEvent.views.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </section>
 
-          {/* Ticket Types */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Types</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {selectedEvent.ticketTypes.map((ticketType) => (
-                <div
-                  key={ticketType.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">{ticketType.name}</p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>฿{ticketType.price.toLocaleString()}</span>
-                      {ticketType.isEarlyBird && (
-                        <Badge variant="default" className="text-xs bg-green-500">Early Bird</Badge>
-                      )}
-                      {ticketType.available === 0 && (
-                        <Badge variant="destructive" className="text-xs">Sold Out</Badge>
-                      )}
+            <Separator />
+
+            {/* Ticket types */}
+            <section>
+              <h2 className="font-heading text-lg font-semibold mb-4">Ticket Types</h2>
+              <div className="space-y-3">
+                {selectedEvent.ticketTypes.map((tt) => (
+                  <div
+                    key={tt.id}
+                    className="flex items-center justify-between p-4 rounded-xl border bg-card"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-medium text-sm">{tt.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-lg font-bold">฿{tt.price.toLocaleString()}</p>
+                          {tt.isEarlyBird && (
+                            <Badge variant="default" className="text-xs bg-green-500">Early Bird</Badge>
+                          )}
+                          {tt.available === 0 && (
+                            <Badge variant="destructive" className="text-xs">Sold Out</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">{tt.available} / {tt.quantity}</p>
+                      <p className="text-xs text-muted-foreground">available</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">{ticketType.available} available</p>
-                    <p className="text-sm">of {ticketType.quantity}</p>
-                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {/* Sidebar card */}
+          <div>
+            <div className="sticky top-6 rounded-xl border bg-card p-6 space-y-5">
+              <div>
+                <p className="text-sm text-muted-foreground">Starting from</p>
+                <p className="font-heading text-3xl font-bold">฿{cheapestPrice.toLocaleString()}</p>
+              </div>
+
+              {isSoldOut ? (
+                <div className="text-center py-3">
+                  <p className="text-destructive font-medium">Sold Out</p>
+                  <p className="text-sm text-muted-foreground mt-1">All tickets have been claimed</p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle>Get Tickets</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">฿{cheapestPrice.toLocaleString()}</span>
-                <span className="text-muted-foreground">starting from</span>
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-                {totalAvailable > 0 ? (
-                  <span>{totalAvailable} tickets remaining</span>
-                ) : (
-                  <span className="text-destructive">Sold out</span>
-                )}
-              </div>
-
-              {user ? (
-                <Button
-                  className="w-full"
-                  size="lg"
-                  disabled={isPastEvent || selectedEvent.status === 'cancelled' || totalAvailable === 0}
-                  onClick={() => router.push(`/events/${selectedEvent.id}/buy`)}
-                >
-                  <Ticket className="w-4 h-4 mr-2" />
-                  {isPastEvent ? 'Event Ended' : 'Buy Tickets'}
-                </Button>
+              ) : isPastEvent ? (
+                <div className="text-center py-3">
+                  <p className="text-muted-foreground font-medium">Event Has Ended</p>
+                </div>
+              ) : isCancelled ? (
+                <div className="text-center py-3">
+                  <p className="text-destructive font-medium">Event Cancelled</p>
+                </div>
               ) : (
                 <Button
-                  className="w-full"
                   size="lg"
-                  onClick={() => router.push(`/login?callbackUrl=/events/${selectedEvent.id}`)}
+                  className="w-full gap-2"
+                  onClick={() =>
+                    user
+                      ? router.push(`/events/${selectedEvent.id}/buy`)
+                      : router.push(`/login?callbackUrl=/events/${selectedEvent.id}`)
+                  }
                 >
-                  Login to Buy Tickets
+                  <Ticket className="h-4 w-4" />
+                  {user ? 'Buy Tickets' : 'Login to Buy'}
                 </Button>
               )}
 
-              <Button variant="outline" className="w-full" onClick={handleShare}>
-                <Share2 className="w-4 h-4 mr-2" />
+              <Separator />
+
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleShare}>
+                <Share2 className="h-4 w-4" />
                 Share Event
               </Button>
-            </CardContent>
-          </Card>
+
+              <p className="text-center text-xs text-muted-foreground">
+                {totalAvailable > 0 ? `${totalAvailable} tickets remaining` : 'Check back for updates'}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

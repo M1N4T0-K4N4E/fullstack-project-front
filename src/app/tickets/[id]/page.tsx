@@ -6,20 +6,21 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { useTicketStore } from '@/store/ticket-store';
 import { useAuthStore } from '@/store/auth-store';
+import { NavHeader } from '@/components/shared/nav-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Download, Share2, Calendar, MapPin, Ticket as TicketIcon, QrCode } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Calendar, MapPin, Ticket, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { Ticket as TicketType } from '@/types';
 
 export default function TicketDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { getTicketById, isLoading } = useTicketStore();
   const { user } = useAuthStore();
-  const [ticket, setTicket] = useState<ReturnType<typeof getTicketById>>(undefined);
+  const [ticket, setTicket] = useState<TicketType | undefined>(undefined);
 
   useEffect(() => {
     if (params.id) {
@@ -35,37 +36,37 @@ export default function TicketDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Skeleton className="h-96 w-full max-w-md mx-auto rounded-xl" />
+      <div className="w-full min-h-screen">
+        <NavHeader />
+        <div className="container mx-auto px-4 py-20">
+          <Skeleton className="h-96 w-full max-w-md mx-auto rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div className="container mx-auto py-8 px-4 text-center">
-        <h1 className="text-2xl font-bold mb-4">Ticket not found</h1>
-        <Link href="/dashboard/tickets">
-          <Button variant="outline">Back to My Tickets</Button>
-        </Link>
+      <div className="w-full min-h-screen">
+        <NavHeader />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <p className="text-muted-foreground mb-4">Ticket not found</p>
+          <Link href="/dashboard/tickets">
+            <Button variant="outline">Back to Tickets</Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'valid':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'used':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'refunded':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    valid: { label: 'Valid', className: 'bg-green-100 text-green-700' },
+    used: { label: 'Used', className: 'bg-muted text-muted-foreground' },
+    cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-700' },
+    refunded: { label: 'Refunded', className: 'bg-amber-100 text-amber-700' },
   };
+
+  const status = statusConfig[ticket.status] ?? { label: ticket.status, className: 'bg-muted' };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -73,117 +74,137 @@ export default function TicketDetailPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Link href="/dashboard/tickets" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
-        <ArrowLeft className="w-4 h-4" />
-        Back to My Tickets
-      </Link>
+    <div className="w-full min-h-screen">
+      <NavHeader />
 
-      <div className="max-w-md mx-auto space-y-6">
-        {/* Ticket Card with QR */}
-        <Card className="overflow-hidden">
-          <div className="bg-primary p-4 text-primary-foreground">
-            <div className="flex items-center gap-2">
-              <TicketIcon className="w-5 h-5" />
-              <span className="font-semibold">Your Ticket</span>
-            </div>
-          </div>
+      <div className="container mx-auto px-4 py-6">
+        <Link
+          href="/dashboard/tickets"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to my tickets
+        </Link>
+      </div>
 
-          <CardContent className="p-6">
-            {/* QR Code Image */}
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <img
-                  src={`/api/tickets/${ticket.id}/qr`}
-                  alt="Ticket QR Code"
-                  className="w-64 h-64 rounded-lg border-2 border-gray-200"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <QrCode className="w-8 h-8 text-primary/20" />
-                </div>
+      <div className="container mx-auto px-4 pb-16">
+        <div className="mx-auto max-w-md space-y-6">
+          {/* Ticket card */}
+          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            {/* Header strip */}
+            <div className="bg-primary px-5 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-primary-foreground">
+                <Ticket className="h-4 w-4" />
+                <span className="font-semibold text-sm">Your Ticket</span>
               </div>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${status.className}`}>
+                {status.label}
+              </span>
             </div>
 
-            {/* Ticket ID */}
-            <div className="text-center mb-6">
-              <p className="text-sm text-muted-foreground">Ticket ID</p>
-              <p className="text-lg font-mono font-bold">{ticket.id.slice(0, 8).toUpperCase()}</p>
-            </div>
-
-            <Separator className="my-4" />
-
-            {/* Event Info */}
-            <div className="space-y-3">
+            {/* Event info */}
+            <div className="p-6 space-y-4">
               <div>
-                <p className="text-xl font-bold">{ticket.eventTitle}</p>
+                <h1 className="font-heading text-xl font-bold leading-tight">
+                  {ticket.eventTitle}
+                </h1>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm">
-                    {format(new Date(ticket.eventDate), 'EEEE, MMMM d, yyyy')}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(ticket.eventDate), 'h:mm a')}
-                  </p>
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {format(new Date(ticket.eventDate), 'EEEE, MMM d, yyyy')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(ticket.eventDate), 'h:mm a')}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
-                <p className="text-sm">{ticket.venue}</p>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm">{ticket.venue}</p>
+                </div>
               </div>
 
               <Separator />
 
-              <div className="flex justify-between items-center">
+              {/* Ticket details */}
+              <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-sm text-muted-foreground">Ticket Type</p>
-                  <p className="font-semibold">{ticket.ticketType}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Type</p>
+                  <p className="font-semibold text-sm">{ticket.ticketType}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Quantity</p>
-                  <p className="font-semibold">x{ticket.quantity}</p>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Qty</p>
+                  <p className="font-semibold text-sm">×{ticket.quantity}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="font-semibold">฿{ticket.price.toLocaleString()}</p>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Total</p>
+                  <p className="font-semibold text-sm">฿{ticket.price.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* QR Code */}
+              <div className="flex flex-col items-center gap-3 py-2">
+                <img
+                  src={`/api/tickets/${ticket.id}/qr`}
+                  alt="Ticket QR Code"
+                  className="w-48 h-48 rounded-lg border-2 border-border"
+                />
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Ticket ID</p>
+                  <p className="font-mono font-bold text-base tracking-widest">
+                    {ticket.id.slice(0, 8).toUpperCase()}
+                  </p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          <Badge className={`px-4 py-2 text-sm ${getStatusColor(ticket.status)}`}>
-            Status: {ticket.status.toUpperCase()}
-          </Badge>
+          {/* Actions */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" onClick={handleShare} className="gap-2">
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={async () => {
+                const res = await fetch(`/api/tickets/${ticket.id}/image`);
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ticket-${ticket.id.slice(0, 8).toUpperCase()}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success('Ticket image downloaded!');
+              }}
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+          </div>
+
+          {/* Purchase details */}
+          <div className="rounded-xl border bg-card p-4 space-y-1.5">
+            <h3 className="text-sm font-semibold mb-2">Purchase Details</h3>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Purchased</span>
+              <span>{format(new Date(ticket.purchasedAt), 'MMM d, yyyy · h:mm a')}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Purchased by</span>
+              <span>{ticket.userName}</span>
+            </div>
+          </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={handleShare}>
-            <Share2 className="w-4 h-4 mr-2" />
-            Share
-          </Button>
-          <Button variant="outline" className="flex-1" onClick={() => window.print()}>
-            <Download className="w-4 h-4 mr-2" />
-            Download
-          </Button>
-        </div>
-
-        {/* Purchase Info */}
-        <Card>
-          <CardHeader className="p-4">
-            <CardTitle className="text-sm">Purchase Details</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 text-sm text-muted-foreground">
-            <p>Purchased on {format(new Date(ticket.purchasedAt), 'MMMM d, yyyy at h:mm a')}</p>
-            <p>Purchased by {ticket.userName}</p>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

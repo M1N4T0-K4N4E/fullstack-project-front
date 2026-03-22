@@ -7,6 +7,8 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string, role: 'user' | 'organizer') => Promise<boolean>;
   logout: () => void;
@@ -18,6 +20,8 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      hasHydrated: false,
+      setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -58,6 +62,9 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'tickale-auth',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

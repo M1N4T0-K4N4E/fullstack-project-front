@@ -1,167 +1,118 @@
 'use client';
 
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import { z } from 'zod';
-import { toFormikValidationSchema } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, Lock } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Camera, Mail, Phone, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
-const accountSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().optional(),
-});
+export default function AccountProfilePage() {
+  const { user } = useAuthStore();
 
-type AccountFormValues = z.infer<typeof accountSchema>;
-
-const passwordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type PasswordFormValues = z.infer<typeof passwordSchema>;
-
-export default function AccountPage() {
-  const { user, logout } = useAuthStore();
-
-  const initialValues: AccountFormValues = {
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
+  const roleConfig: Record<string, { label: string; className: string }> = {
+    admin: { label: 'Admin', className: 'bg-red-500/20 text-red-400' },
+    organizer: { label: 'Organizer', className: 'bg-primary/20 text-primary' },
+    user: { label: 'Attendee', className: 'bg-muted text-muted-foreground' },
   };
 
-  const handleSubmit = (values: AccountFormValues, { setSubmitting }: { setSubmitting: (v: boolean) => void }) => {
-    // Mock update - in real app would call API
-    toast.success('Account updated successfully!');
-    setSubmitting(false);
-  };
-
-  const handlePasswordSubmit = (values: PasswordFormValues, { setSubmitting }: { setSubmitting: (v: boolean) => void }) => {
-    // Mock update - in real app would call API
-    toast.success('Password updated successfully!');
-    setSubmitting(false);
-  };
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive' as const;
-      case 'organizer':
-        return 'default' as const;
-      default:
-        return 'secondary' as const;
-    }
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <ProtectedRoute>
-      <div className="container mx-auto py-8 px-4 max-w-2xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Account Settings</h1>
-          <p className="text-muted-foreground">Manage your account information</p>
+    <div className="max-w-2xl w-full mx-auto px-4 py-6 space-y-6">
+      {/* Profile header */}
+      <div className="flex items-center gap-4">
+        <div className="relative shrink-0">
+          <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg ring-2 ring-background shadow-sm">
+            {user ? getInitials(user.name) : '?'}
+          </div>
+          <button className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-muted border shadow-sm hover:bg-background transition-colors cursor-pointer">
+            <Camera className="h-3 w-3 text-muted-foreground" />
+          </button>
         </div>
-
-        <div className="mb-6">
-          <Badge variant={getRoleBadgeVariant(user?.role || 'user')} className="text-sm px-3 py-1">
-            {user?.role}
-          </Badge>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-base truncate">{user?.name}</p>
+          <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
         </div>
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Profile Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Formik
-              initialValues={initialValues}
-              validationSchema={toFormikValidationSchema(accountSchema)}
-              onSubmit={handleSubmit}
-            >
-              {({ isSubmitting }) => (
-                <Form className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Field as={Input} id="name" name="name" />
-                    <ErrorMessage name="name" component="p" className="text-sm text-red-500" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Field as={Input} id="email" name="email" type="email" />
-                    <ErrorMessage name="email" component="p" className="text-sm text-red-500" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone (optional)</Label>
-                    <Field as={Input} id="phone" name="phone" placeholder="081-234-5678" />
-                    <ErrorMessage name="phone" component="p" className="text-sm text-red-500" />
-                  </div>
-
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </Form>
-              )}
-            </Formik>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              Change Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Formik<PasswordFormValues>
-              initialValues={{ currentPassword: '', newPassword: '' }}
-              validationSchema={toFormikValidationSchema(passwordSchema)}
-              onSubmit={handlePasswordSubmit}
-            >
-              {({ isSubmitting }) => (
-                <Form className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
-                    <Field as={Input} id="currentPassword" name="currentPassword" type="password" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Field as={Input} id="newPassword" name="newPassword" type="password" />
-                    <ErrorMessage name="newPassword" component="p" className="text-sm text-red-500" />
-                  </div>
-
-                  <Button type="submit" variant="outline" disabled={isSubmitting}>
-                    Update Password
-                  </Button>
-                </Form>
-              )}
-            </Formik>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-6 border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-600">Danger Zone</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={logout}>
-              Log Out
-            </Button>
-          </CardContent>
-        </Card>
+        {user?.role && roleConfig[user.role] && (
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${roleConfig[user.role].className}`}>
+            {roleConfig[user.role].label}
+          </span>
+        )}
       </div>
-    </ProtectedRoute>
+
+      <Separator />
+
+      <div className="rounded-xl border bg-card">
+        <div className="px-5 py-4 border-b">
+          <h2 className="font-semibold text-sm">Personal Information</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Update your personal details
+          </p>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                Full Name
+              </Label>
+              <Input defaultValue={user?.name || ''} placeholder="Your name" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                Email
+              </Label>
+              <Input defaultValue={user?.email || ''} type="email" placeholder="your@email.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                Phone
+              </Label>
+              <Input defaultValue={user?.phone || ''} type="tel" placeholder="081-234-5678" />
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button size="sm" className="gap-1.5" onClick={() => toast.success('Profile updated!')}>
+              <Save className="h-3.5 w-3.5" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card">
+        <div className="px-5 py-4 border-b">
+          <h2 className="font-semibold text-sm">Notifications</h2>
+        </div>
+        <div className="divide-y">
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Email Notifications</p>
+                <p className="text-xs text-muted-foreground">Updates about your tickets</p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="text-xs shrink-0">Manage</Button>
+          </div>
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">SMS Notifications</p>
+                <p className="text-xs text-muted-foreground">Alerts via text message</p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="text-xs shrink-0">Manage</Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

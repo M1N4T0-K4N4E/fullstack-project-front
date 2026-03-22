@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Formik, Form, Field, ErrorMessage, FieldArray } from 'formik';
 import { z } from 'zod';
-import { toFormikValidationSchema } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,7 +121,18 @@ export function EventForm({ event }: EventFormProps) {
   return (
     <Formik
       initialValues={initialValues}
-      validationSchema={toFormikValidationSchema(eventSchema)}
+      validate={async (values) => {
+        const result = await eventSchema.safeParseAsync(values);
+        if (!result.success) {
+          const errors: Record<string, string> = {};
+          for (const issue of result.error.issues) {
+            const path = issue.path.join('.');
+            if (!errors[path]) errors[path] = issue.message;
+          }
+          return errors;
+        }
+        return {};
+      }}
       onSubmit={handleSubmit}
     >
       {({ values, setFieldValue, isSubmitting }) => (
