@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '@/types';
-import { validateCredentials, findUserByEmail, generateId } from '@/lib/mock-data';
+import { User, UserRole } from '@/types';
+import { validateCredentials, findUserByEmail, generateId } from '@/mock-data';
+
+type UserRoleCreatable = Exclude<UserRole, 'admin'>;
 
 interface AuthStore {
   user: User | null;
@@ -10,7 +12,7 @@ interface AuthStore {
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string, role: 'user' | 'organizer') => Promise<boolean>;
+  register: (email: string, password: string, name: string, role: UserRoleCreatable) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -36,7 +38,7 @@ export const useAuthStore = create<AuthStore>()(
         return false;
       },
 
-      register: async (email: string, password: string, name: string, role: 'user' | 'organizer') => {
+      register: async (email: string, password: string, name: string, role: UserRoleCreatable) => {
         set({ isLoading: true });
         // Simulate API delay
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -49,7 +51,7 @@ export const useAuthStore = create<AuthStore>()(
           id: generateId(),
           email,
           name,
-          role,
+          role: role,
           createdAt: new Date().toISOString(),
         };
         set({ user: newUser, isAuthenticated: true, isLoading: false });

@@ -1,106 +1,116 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RegisterForm } from '@/components/auth/register-form';
-import { Ticket, ArrowLeft } from 'lucide-react';
-
-function RegisterContent() {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
-
-  return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left panel — branding */}
-      <div className="hidden lg:flex flex-col justify-between bg-foreground text-background p-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-muted/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-muted/10 blur-3xl" />
-
-        <Link href="/" className="flex items-center gap-2 relative z-10">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Ticket className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold tracking-tight">Tickale</span>
-        </Link>
-
-        <div className="relative z-10 space-y-8">
-          {[
-            { label: 'Concerts & Festivals', desc: 'Never miss your favorite artists live' },
-            { label: 'Sports & Workshops', desc: 'Secure your spot at any event' },
-            { label: 'QR-verified tickets', desc: 'Fakes are not a thing here' },
-          ].map((item) => (
-            <div key={item.label} className="space-y-1">
-              <p className="font-semibold text-lg">{item.label}</p>
-              <p className="text-sm opacity-60">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <p className="text-sm opacity-40 relative z-10">
-          © 2026 Tickale. All rights reserved.
-        </p>
-      </div>
-
-      {/* Right panel — form */}
-      <div className="flex flex-col justify-center px-6 py-12 md:px-12">
-        <div className="mx-auto w-full max-w-sm">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-10 lg:hidden"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to home
-          </Link>
-
-          <div className="mb-8">
-            <h1 className="font-heading text-2xl font-bold mb-1.5">Create account</h1>
-            <p className="text-sm text-muted-foreground">
-              Join Tickale to discover and book events
-            </p>
-          </div>
-
-          <RegisterForm />
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link
-                href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-                className="font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RegisterSkeleton() {
-  return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex bg-foreground p-10" />
-      <div className="flex flex-col justify-center px-6 py-12 md:px-12">
-        <div className="mx-auto w-full max-w-sm space-y-4">
-          <div className="h-8 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-56 bg-muted animate-pulse rounded" />
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { useAuthStore } from '@/store/auth-store';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useEffect, useState } from 'react';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { register, isAuthenticated, isLoading } = useAuthStore();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated) router.push('/');
+  }, [isAuthenticated, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const ok = await register(email, password, name, 'user');
+    if (!ok) setError('An account with this email already exists.');
+  };
+
   return (
-    <Suspense fallback={<RegisterSkeleton />}>
-      <RegisterContent />
-    </Suspense>
+    <div className="min-h-screen flex">
+      {/* Left panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col p-12 justify-between">
+        <Link href="/">
+          <img className="h-8" src="/logo-long.svg" alt="shaderd" />
+        </Link>
+        <div className="space-y-3">
+          <p className="text-3xl font-bold leading-snug">
+            Join the community<br />of shader creators.
+          </p>
+          <p className="text-muted-foreground text-sm">
+            Upload your shaders, get feedback, and inspire others with your work.
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">© 2025 shaderd</p>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm space-y-8">
+          <Link href="/" className="lg:hidden block">
+            <img className="h-8" src="/logo-long.svg" alt="shaderd" />
+          </Link>
+
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold">Create an account</h1>
+            <p className="text-sm text-muted-foreground">Already have one?{' '}
+              <Link href="/login" className="text-foreground underline underline-offset-4">Sign in</Link>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <label htmlFor="name" className="text-xs text-muted-foreground uppercase tracking-widest">Display name</label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                autoComplete="name"
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-widest">Email</label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-widest">Password</label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="h-10"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive pt-1">{error}</p>
+            )}
+
+            <Button type="submit" className="w-full h-10 mt-2" disabled={isLoading}>
+              {isLoading ? 'Creating account…' : 'Create account'}
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }

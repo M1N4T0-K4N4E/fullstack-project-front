@@ -1,113 +1,232 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usersApi } from '@/lib/api';
-import { NavHeader } from '@/components/shared/nav-header';
-import { Input } from '@/components/ui/input';
+import * as React from 'react';
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+} from '@tanstack/react-table';
+import { useAdminStore, type ManagedUser } from '@/store/admin-store';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Mail, ChevronDown } from 'lucide-react';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { User, UserRole } from '@/types';
-import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Avvvatars from 'avvvatars-react';
+import { ArrowUpDown, MoreHorizontalIcon, ShieldIcon, ShieldOffIcon, TimerIcon, BanIcon, RotateCcwIcon } from 'lucide-react';
+import { DateTime } from 'luxon';
+
+function TimeoutDialog({ user, open, onClose }: { user: ManagedUser | null; open: boolean; onClose: () => void }) {
+  const [duration, setDuration] = React.useState('30');
+  const timeoutUser = useAdminStore(s => s.timeoutUser);
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Timeout {user?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1 py-2">
+          <label className="text-xs text-muted-foreground uppercase tracking-widest">Duration</label>
+          <Select value={duration} onValueChange={setDuration}>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="15">15 minutes</SelectItem>
+              <SelectItem value="30">30 minutes</SelectItem>
+              <SelectItem value="60">1 hour</SelectItem>
+              <SelectItem value="1440">24 hours</SelectItem>
+              <SelectItem value="10080">7 days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={() => { if (user) timeoutUser(user.id, Number(duration)); onClose(); }}>
+            Apply timeout
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { users, banUser, unbanUser, promoteToModerator, demoteModerator } = useAdminStore();
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [timeoutTarget, setTimeoutTarget] = React.useState<ManagedUser | null>(null);
 
-  useEffect(() => {
-    setUsers(usersApi.getAll());
-    setLoading(false);
-  }, []);
+  const columns: ColumnDef<ManagedUser>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => (
+        <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          User <ArrowUpDown className="size-3" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <Avatar size="sm">
+            <AvatarFallback>
+              <Avvvatars border={false} size={24} style="shape" value={row.original.email.replace('@', '-')} />
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-medium">{row.original.name}</p>
+            <p className="text-xs text-muted-foreground">{row.original.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }) => {
+        const role = row.original.role;
+        return <Badge variant={role === 'moderator' ? 'secondary' : 'outline'} className="capitalize text-xs">{role}</Badge>;
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const u = row.original;
+        const map = { active: 'secondary', banned: 'destructive', timed_out: 'outline' } as const;
+        return (
+          <div>
+            <Badge variant={map[u.status]} className="text-xs capitalize">{u.status.replace('_', ' ')}</Badge>
+            {u.status === 'timed_out' && u.timeoutUntil && (
+              <p className="text-xs text-muted-foreground mt-0.5">until {DateTime.fromISO(u.timeoutUntil).toFormat('MMM dd, HH:mm')}</p>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
+        <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Joined <ArrowUpDown className="size-3" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {DateTime.fromISO(row.original.createdAt).toFormat('MMM dd, yyyy')}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      enableHiding: false,
+      cell: ({ row }) => {
+        const u = row.original;
+        if (u.role === 'admin') return null;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-7">
+                <MoreHorizontalIcon className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {u.role === 'user' && (
+                <DropdownMenuItem onClick={() => promoteToModerator(u.id)}>
+                  <ShieldIcon className="size-4" /> Make moderator
+                </DropdownMenuItem>
+              )}
+              {u.role === 'moderator' && (
+                <DropdownMenuItem onClick={() => demoteModerator(u.id)}>
+                  <ShieldOffIcon className="size-4" /> Remove moderator
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => setTimeoutTarget(u)}>
+                <TimerIcon className="size-4" /> Timeout
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {u.status === 'banned' ? (
+                <DropdownMenuItem onClick={() => unbanUser(u.id)}>
+                  <RotateCcwIcon className="size-4" /> Unban
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem variant="destructive" onClick={() => banUser(u.id)}>
+                  <BanIcon className="size-4" /> Ban user
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const roleConfig: Record<UserRole, { label: string; className: string }> = {
-    admin: { label: 'Admin', className: 'bg-red-100 text-red-700' },
-    organizer: { label: 'Organizer', className: 'bg-primary/10 text-primary' },
-    user: { label: 'Attendee', className: 'bg-muted text-muted-foreground' },
-  };
+  const table = useReactTable({
+    data: users,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    state: { sorting, columnFilters },
+  });
 
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
-      <div className="w-full min-h-screen">
-        <NavHeader />
-
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="font-heading text-2xl font-bold">User Management</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-
-          {/* Search */}
-          <div className="relative mb-6 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-14 text-center">
-              <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-              <p className="text-muted-foreground text-sm">No users found</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-4 p-4 rounded-xl border bg-card"
-                >
-                  {/* Avatar placeholder */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-semibold text-sm">{user.name}</p>
-                      <Badge className={`text-xs shrink-0 ${roleConfig[user.role].className}`}>
-                        {roleConfig[user.role].label}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3 shrink-0" />
-                      <span>{user.email}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0 hidden sm:block">
-                    <p className="text-xs text-muted-foreground">
-                      Joined {format(new Date(user.createdAt), 'MMM d, yyyy')}
-                    </p>
-                  </div>
-
-                  <button className="shrink-0 p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold">Users</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage accounts, roles, and access</p>
       </div>
-    </ProtectedRoute>
+      <div className="flex items-center">
+        <Input
+          placeholder="Filter by name…"
+          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+          onChange={e => table.getColumn('name')?.setFilterValue(e.target.value)}
+          className="max-w-xs h-8 text-sm"
+        />
+      </div>
+      <div className="rounded-md border overflow-hidden">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map(hg => (
+              <TableRow key={hg.id}>
+                {hg.headers.map(h => (
+                  <TableHead key={h.id}>
+                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? table.getRowModel().rows.map(row => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map(cell => (
+                  <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                ))}
+              </TableRow>
+            )) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">No results.</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-end gap-2 pt-4">
+        <span className="text-xs text-muted-foreground flex-1">{table.getFilteredRowModel().rows.length} user(s)</span>
+        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+      </div>
+      <TimeoutDialog user={timeoutTarget} open={!!timeoutTarget} onClose={() => setTimeoutTarget(null)} />
+    </div>
   );
 }
