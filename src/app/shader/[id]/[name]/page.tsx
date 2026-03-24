@@ -15,7 +15,7 @@ import Avvvatars from "avvvatars-react"
 import { useControls, Leva, LevaInputs } from 'leva'
 import { CopyIcon, HeartIcon } from 'lucide-react';
 import { DateTime } from "luxon";
-import { useEffect, useMemo, useRef } from 'react';
+import { CSSProperties, useEffect, useMemo, useRef } from 'react';
 
 const ShaderPreview = () => {
   const $uTime = useOGLContext(s => s.time)
@@ -105,7 +105,7 @@ export default () => {
             rgba(58, 34, 17, 0.2) 0px 12px 20px -8px,
             rgba(58, 34, 17, 0.1) 0px 0px 0px 1px
           `,
-        }}
+        } as CSSProperties}
       >
         <div className="-mb-14 cursor-default p-[10px] font-mono text-[11px]">Presets</div>
         <div data-leva-container>
