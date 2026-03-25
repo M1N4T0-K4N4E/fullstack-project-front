@@ -80,7 +80,7 @@ export default function AdminOverviewPage() {
                   <ActivityIcon className="size-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-sm font-medium">{log.userName}</span>
+                  <span className="text-sm font-medium">{log.username}</span>
                   <span className="text-sm text-muted-foreground"> {log.action}</span>
                   {log.target && (
                     <span className="text-sm text-muted-foreground truncate"> · {log.target}</span>

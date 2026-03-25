@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowUpDown, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 import { DateTime } from 'luxon';
 
-export default function AdminPostsPage() {
+export default function ModeratorPostsPage() {
   const { posts, removePost, restorePost } = useAdminStore();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);

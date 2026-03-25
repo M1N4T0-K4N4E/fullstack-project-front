@@ -5,8 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import { SiteHeader } from '@/components/app/site-header';
-import { Footer } from '@/components/app/footer';
-import { LayoutDashboardIcon, UsersIcon, ActivityIcon, FileTextIcon } from 'lucide-react';
+import { LayoutDashboardIcon, UsersIcon, FileTextIcon } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -29,13 +28,12 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const NAV = [
-  { label: 'Overview', href: '/admin', icon: LayoutDashboardIcon, exact: true },
-  { label: 'Users', href: '/admin/users', icon: UsersIcon },
-  { label: 'Activity', href: '/admin/activity', icon: ActivityIcon },
-  { label: 'Posts', href: '/admin/posts', icon: FileTextIcon },
+  { label: 'Overview', href: '/moderator', icon: LayoutDashboardIcon, exact: true },
+  { label: 'Users', href: '/moderator/users', icon: UsersIcon },
+  { label: 'Posts', href: '/moderator/posts', icon: FileTextIcon },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function ModeratorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuthStore();
@@ -43,10 +41,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    if (mounted && (!isAuthenticated || user?.role !== 'admin')) router.push('/');
+    if (mounted && (!isAuthenticated || (user?.role !== 'moderator' && user?.role !== 'admin'))) router.push('/');
   }, [mounted, isAuthenticated, user, router]);
 
-  if (!mounted || !isAuthenticated || user?.role !== 'admin') {
+  if (!mounted || !isAuthenticated || (user?.role !== 'moderator' && user?.role !== 'admin')) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteHeader />
@@ -70,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Sidebar collapsible="none" className="hidden md:flex">
               <SidebarContent>
                 <SidebarGroup>
-                  <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                  <SidebarGroupLabel>Moderator</SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu className='gap-1'>
                       {NAV.map(({ label, href, icon: Icon, exact }) => {
@@ -98,10 +96,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <BreadcrumbList>
                     <BreadcrumbItem className="hidden md:block">
                       <BreadcrumbLink asChild>
-                        <Link href="/admin">Admin</Link>
+                        <Link href="/moderator">Moderator</Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
-                    {activeNav && activeNav.href !== '/admin' && (
+                    {activeNav && activeNav.href !== '/moderator' && (
                       <>
                         <BreadcrumbSeparator className="hidden md:block" />
                         <BreadcrumbItem>

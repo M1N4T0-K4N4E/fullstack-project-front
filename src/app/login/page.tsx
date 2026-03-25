@@ -6,24 +6,23 @@ import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState } from 'react';
+import { Formik, Form, Field } from 'formik';
+import { z } from 'zod/v4';
+import { toFormikValidationSchema } from '@/lib/zod-formik';
+
+const loginSchema = z.object({
+  email: z.string({ error: 'Email is required' }).email('Please enter a valid email address'),
+  password: z.string({ error: 'Password is required' }).min(1, 'Password is required'),
+});
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) router.push('/');
   }, [isAuthenticated, router]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const ok = await login(email, password);
-    if (!ok) setError('Invalid email or password.');
-  };
 
   return (
     <div className="min-h-screen flex">
@@ -57,43 +56,59 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-widest">Email</label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="h-10"
-              />
-            </div>
+          <Formik
+            initialValues={{ email: '', password: '' }}
+            validationSchema={toFormikValidationSchema(loginSchema)}
+            onSubmit={async (values) => {
+              setError('');
+              const ok = await login(values.email, values.password);
+              if (!ok) setError('Invalid email or password.');
+            }}
+          >
+            {({ errors, touched }) => (
+              <Form className="space-y-3">
+                <div className="space-y-1">
+                  <label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-widest">Email</label>
+                  <Field
+                    as={Input}
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    className="h-10"
+                  />
+                  {errors.email && touched.email && (
+                    <p className="text-xs text-destructive">{errors.email}</p>
+                  )}
+                </div>
 
-            <div className="space-y-1">
-              <label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-widest">Password</label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="h-10"
-              />
-            </div>
+                <div className="space-y-1">
+                  <label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-widest">Password</label>
+                  <Field
+                    as={Input}
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="h-10"
+                  />
+                  {errors.password && touched.password && (
+                    <p className="text-xs text-destructive">{errors.password}</p>
+                  )}
+                </div>
 
-            {error && (
-              <p className="text-sm text-destructive pt-1">{error}</p>
+                {error && (
+                  <p className="text-sm text-destructive pt-1">{error}</p>
+                )}
+
+                <Button type="submit" className="w-full h-10 mt-2" disabled={isLoading}>
+                  {isLoading ? 'Signing in…' : 'Sign in'}
+                </Button>
+              </Form>
             )}
-
-            <Button type="submit" className="w-full h-10 mt-2" disabled={isLoading}>
-              {isLoading ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
+          </Formik>
         </div>
       </div>
     </div>

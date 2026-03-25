@@ -32,7 +32,7 @@ export default function AdminActivityPage() {
           User <ArrowUpDown className="size-3" />
         </Button>
       ),
-      cell: ({ row }) => <span className="text-sm font-medium">{row.original.userName}</span>,
+      cell: ({ row }) => <span className="text-sm font-medium">{row.original.username}</span>,
     },
     {
       accessorKey: 'action',
@@ -102,9 +102,9 @@ export default function AdminActivityPage() {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length ? table.getRowModel().rows.map(row => (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} className="h-14">
                 {row.getVisibleCells().map(cell => (
-                  <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                  <TableCell key={cell.id} className="py-2">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                 ))}
               </TableRow>
             )) : (

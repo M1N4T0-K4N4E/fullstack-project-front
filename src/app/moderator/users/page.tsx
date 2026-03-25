@@ -19,10 +19,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Avvvatars from 'avvvatars-react';
-import { ArrowUpDown, MoreHorizontalIcon, ShieldIcon, ShieldOffIcon, TimerIcon, BanIcon, RotateCcwIcon } from 'lucide-react';
+import { ArrowUpDown, TimerIcon } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { Formik, Form } from 'formik';
 import { z } from 'zod/v4';
@@ -75,11 +74,14 @@ function TimeoutDialog({ user, open, onClose }: { user: ManagedUser | null; open
   );
 }
 
-export default function AdminUsersPage() {
-  const { users, banUser, unbanUser, promoteToModerator, demoteModerator } = useAdminStore();
+export default function ModeratorUsersPage() {
+  const { users } = useAdminStore();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [timeoutTarget, setTimeoutTarget] = React.useState<ManagedUser | null>(null);
+
+  // Moderators can only manage regular users
+  const managedUsers = users.filter(u => u.role === 'user');
 
   const columns: ColumnDef<ManagedUser>[] = [
     {
@@ -102,14 +104,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
       ),
-    },
-    {
-      accessorKey: 'role',
-      header: 'Role',
-      cell: ({ row }) => {
-        const role = row.original.role;
-        return <Badge variant={role === 'moderator' ? 'secondary' : 'outline'} className="capitalize text-xs">{role}</Badge>;
-      },
     },
     {
       accessorKey: 'status',
@@ -145,47 +139,18 @@ export default function AdminUsersPage() {
       enableHiding: false,
       cell: ({ row }) => {
         const u = row.original;
-        if (u.role === 'admin') return null;
+        if (u.status === 'banned') return <Badge variant="destructive" className="text-xs">Banned</Badge>;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-7">
-                <MoreHorizontalIcon className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              {u.role === 'user' && (
-                <DropdownMenuItem onClick={() => promoteToModerator(u.id)}>
-                  <ShieldIcon className="size-4" /> Make moderator
-                </DropdownMenuItem>
-              )}
-              {u.role === 'moderator' && (
-                <DropdownMenuItem onClick={() => demoteModerator(u.id)}>
-                  <ShieldOffIcon className="size-4" /> Remove moderator
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => setTimeoutTarget(u)}>
-                <TimerIcon className="size-4" /> Timeout
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {u.status === 'banned' ? (
-                <DropdownMenuItem onClick={() => unbanUser(u.id)}>
-                  <RotateCcwIcon className="size-4" /> Unban
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem variant="destructive" onClick={() => banUser(u.id)}>
-                  <BanIcon className="size-4" /> Ban user
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setTimeoutTarget(u)}>
+            <TimerIcon className="size-3.5 mr-1" /> Timeout
+          </Button>
         );
       },
     },
   ];
 
   const table = useReactTable({
-    data: users,
+    data: managedUsers,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -200,7 +165,7 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Users</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage accounts, roles, and access</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Timeout users who violate community guidelines</p>
       </div>
       <div className="flex items-center">
         <Input

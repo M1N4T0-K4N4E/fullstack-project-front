@@ -12,7 +12,7 @@ export const mockUsers: User[] = [
   {
     id: 'moderator-1',
     email: 'mod@shaderd.com',
-    name: 'Music Productions',
+    name: 'Moderator',
     role: 'moderator',
     createdAt: '2024-01-10T08:00:00Z',
   },

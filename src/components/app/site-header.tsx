@@ -25,6 +25,9 @@ export const SiteHeader = () => {
         </Link>
 
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/shader">Discover</Link>
+          </Button>
           {isAuthenticated && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -42,6 +45,19 @@ export const SiteHeader = () => {
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator />
+                {user.role === 'admin' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">Admin Dashboard</Link>
+                  </DropdownMenuItem>
+                )}
+                {(user.role === 'moderator' || user.role === 'admin') && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/moderator">Moderator Dashboard</Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link href="/my-posts">My Posts</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/account">Account</Link>
                 </DropdownMenuItem>

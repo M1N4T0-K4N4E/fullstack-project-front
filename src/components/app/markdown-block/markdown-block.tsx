@@ -36,16 +36,20 @@ const components = {
   td: (props: React.PropsWithChildren) => <td className='border border-zinc-300 p-2'>{props.children}</td>,
 };
 
-export const MarkdownBlock = () => {
-  const content = useMemo(() => {
+interface MarkdownBlockProps {
+  content: string
+}
+
+export const MarkdownBlock = ({ content }: React.PropsWithChildren<MarkdownBlockProps>) => {
+  const node = useMemo(() => {
     return unified()
       .use(remarkParse)
       .use(remarkRehype)
       .use(rehypeSanitize)
       .use(rehypeReact, { jsx, jsxs, Fragment, components })
-      .processSync("# Hello World\nThis is **bold** text.")
+      .processSync(content)
       .result;
   }, []);
 
-  return <>{content}</>
+  return <>{node}</>
 }
