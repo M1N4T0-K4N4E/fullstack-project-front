@@ -112,7 +112,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
           name: u.name ?? '',
           role: (u.role as ManagedUser['role']) ?? 'user',
           createdAt: u.createdAt ?? new Date().toISOString(),
-          status: 'active' as UserStatus,
+          status: (u.status as UserStatus) ?? 'active',
         }));
         set({ users: mapped });
       }

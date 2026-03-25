@@ -1818,6 +1818,7 @@ export interface operations {
                             email?: string | null;
                             name?: string | null;
                             role?: string | null;
+                            status?: string | null;
                             avatarUrl?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
