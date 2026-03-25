@@ -134,7 +134,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
         fragment: defaultFragment,
         authorId: '',
         authorName: p.user?.name ?? '',
-        createdAt: '',
+        createdAt: p.createdAt ?? new Date().toISOString(),
         removed: false,
         thumbnail: p.thumbnail ?? null,
         like: p.like ?? 0,

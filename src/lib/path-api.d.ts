@@ -1111,6 +1111,7 @@ export interface operations {
                         thumbnail?: string | null;
                         like?: number;
                         dislike?: number;
+                        createdAt?: string;
                         user?: {
                             name?: string | null;
                         };
@@ -1236,6 +1237,7 @@ export interface operations {
                         thumbnail?: string | null;
                         like?: number;
                         dislike?: number;
+                        createdAt?: string;
                         user?: {
                             name?: string | null;
                         };
@@ -1283,6 +1285,7 @@ export interface operations {
                             dislike?: number;
                             vertex?: string | null;
                             fragment?: string | null;
+                            createdAt?: string;
                             user?: {
                                 name?: string | null;
                             };
