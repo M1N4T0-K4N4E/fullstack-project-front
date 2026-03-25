@@ -217,7 +217,7 @@ export interface paths {
         };
         /**
          * List all posts
-         * @description Get a list of all posts with user info
+         * @description Get a paginated list of all posts with user info
          */
         get: operations["listPosts"];
         put?: never;
@@ -241,7 +241,7 @@ export interface paths {
         };
         /**
          * List all posts
-         * @description Get a list of all posts with user info
+         * @description Get a paginated list of own posts with user info
          */
         get: operations["listPosts"];
         put?: never;
@@ -393,7 +393,7 @@ export interface paths {
         };
         /**
          * List all users
-         * @description Get a list of all users (admin only)
+         * @description Get a paginated list of all users (admin only)
          */
         get: operations["listUsers"];
         put?: never;
@@ -1091,31 +1091,40 @@ export interface operations {
     };
     listPosts: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description List of posts */
+            /** @description Paginated list of posts */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        id?: string;
-                        title?: string;
-                        context?: string;
-                        thumbnail?: string | null;
-                        like?: number;
-                        dislike?: number;
-                        createdAt?: string;
-                        user?: {
-                            name?: string | null;
-                        };
-                    }[];
+                        data?: {
+                            id?: string;
+                            title?: string;
+                            context?: string;
+                            thumbnail?: string | null;
+                            like?: number;
+                            dislike?: number;
+                            createdAt?: string;
+                            user?: {
+                                name?: string | null;
+                            };
+                        }[];
+                        total?: number;
+                        page?: number;
+                        limit?: number;
+                        totalPages?: number;
+                    };
                 };
             };
             /** @description Error response */
@@ -1217,31 +1226,40 @@ export interface operations {
     };
     listPosts: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description List of posts */
+            /** @description Paginated list of posts */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        id?: string;
-                        title?: string;
-                        context?: string;
-                        thumbnail?: string | null;
-                        like?: number;
-                        dislike?: number;
-                        createdAt?: string;
-                        user?: {
-                            name?: string | null;
-                        };
-                    }[];
+                        data?: {
+                            id?: string;
+                            title?: string;
+                            context?: string;
+                            thumbnail?: string | null;
+                            like?: number;
+                            dislike?: number;
+                            createdAt?: string;
+                            user?: {
+                                name?: string | null;
+                            };
+                        }[];
+                        total?: number;
+                        page?: number;
+                        limit?: number;
+                        totalPages?: number;
+                    };
                 };
             };
             /** @description Error response */
@@ -1889,22 +1907,24 @@ export interface operations {
     };
     listUsers: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description List of users */
+            /** @description Paginated list of users */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        message?: string;
-                        users?: {
+                        data?: {
                             id?: string;
                             email?: string | null;
                             name?: string | null;
@@ -1914,6 +1934,10 @@ export interface operations {
                             createdAt?: string;
                             updatedAt?: string;
                         }[];
+                        total?: number;
+                        page?: number;
+                        limit?: number;
+                        totalPages?: number;
                     };
                 };
             };

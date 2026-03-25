@@ -108,8 +108,8 @@ export const useAdminStore = create<AdminStore>((set) => ({
     set({ isLoadingUsers: true });
     try {
       const { data } = await c.GET('/api/users');
-      if (data?.users) {
-        const mapped: ManagedUser[] = data.users.map((u) => ({
+      if (data?.data) {
+        const mapped: ManagedUser[] = data.data.map((u) => ({
           id: u.id ?? '',
           email: u.email ?? '',
           name: u.name ?? '',
@@ -156,8 +156,8 @@ export const useAdminStore = create<AdminStore>((set) => ({
     const c = getClient();
     if (!c) return;
     const { data } = await c.GET('/api/posts');
-    if (data) {
-      const mapped: Post[] = (Array.isArray(data) ? data : []).map((p) => ({
+    if (data?.data) {
+      const mapped: Post[] = (Array.isArray(data.data) ? data.data : []).map((p) => ({
         id: p.id ?? '',
         title: p.title ?? '',
         content: p.context ?? '',
