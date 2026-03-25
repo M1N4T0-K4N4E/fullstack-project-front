@@ -1,8 +1,9 @@
 'use client';
 
-import * as React from 'react';
+
 import { useAdminStore } from '@/store/admin-store';
 import { UsersIcon, TimerIcon, FileTextIcon, Trash2Icon } from 'lucide-react';
+import { useEffect } from 'react';
 
 const StatCard = ({
   label, value, icon: Icon, accent,
@@ -23,7 +24,7 @@ const StatCard = ({
 export default function ModeratorOverviewPage() {
   const { users, posts, fetchUsers, fetchPosts } = useAdminStore();
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchUsers();
     fetchPosts();
   }, []);

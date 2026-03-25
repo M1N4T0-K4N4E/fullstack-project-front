@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -19,13 +18,16 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUpDown, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function ModeratorPostsPage() {
   const { posts, removePost, restorePost, fetchPosts } = useAdminStore();
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  React.useEffect(() => { fetchPosts(); }, []);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  useEffect(() => {
+    fetchPosts()
+  }, []);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const columns: ColumnDef<Post>[] = [
     {

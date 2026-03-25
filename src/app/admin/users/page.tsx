@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+
 import {
   flexRender,
   getCoreRowModel,
@@ -27,6 +27,7 @@ import { DateTime } from 'luxon';
 import { Formik, Form } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
+import React, { useEffect, useState } from 'react';
 
 const timeoutSchema = z.object({
   duration: z.string({ error: 'Please select a duration' }).min(1, 'Please select a duration'),
@@ -77,11 +78,11 @@ function TimeoutDialog({ user, open, onClose }: { user: ManagedUser | null; open
 
 export default function AdminUsersPage() {
   const { users, banUser, unbanUser, promoteToModerator, demoteModerator, fetchUsers } = useAdminStore();
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  React.useEffect(() => { fetchUsers(); }, []);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [timeoutTarget, setTimeoutTarget] = React.useState<ManagedUser | null>(null);
+  useEffect(() => { fetchUsers(); }, []);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [timeoutTarget, setTimeoutTarget] = useState<ManagedUser | null>(null);
 
   const columns: ColumnDef<ManagedUser>[] = [
     {

@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+
 import {
   flexRender,
   getCoreRowModel,
@@ -18,11 +18,12 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUpDown } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { useState } from 'react';
 
 export default function AdminActivityPage() {
   const logs = useAdminStore(s => s.logs);
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: 'timestamp', desc: true }]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'timestamp', desc: true }]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const columns: ColumnDef<ActivityLog>[] = [
     {
