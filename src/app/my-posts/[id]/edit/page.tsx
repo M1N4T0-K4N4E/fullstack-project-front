@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OGL } from '@/components/app/ogl/ogl';
 import { OGLProvider } from '@/components/app/ogl/store';
 import { UNIFORMS, UNIFORM_DEFAULT } from '@/components/app/ogl/shader';
-import { ArrowLeftIcon, SaveIcon } from 'lucide-react';
+import { ArrowLeftIcon, GlobeIcon, SaveIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useFormik } from 'formik';
 import { z } from 'zod/v4';
@@ -127,9 +127,16 @@ export default function EditPostPage() {
                     <p className="text-sm text-muted-foreground mt-0.5">Update your shader post</p>
                   </div>
                 </div>
-                <Button size="lg" type="submit">
-                  <SaveIcon className="size-5 mr-1.5" /> Save
-                </Button>
+                <div className='flex gap-2'>
+                  <Button size="lg" type="submit">
+                    <SaveIcon className="size-5 mr-1.5" /> Save
+                  </Button>
+                  <Button size="lg" type='button' onClick={() => {
+                    console.log("HI")
+                  }}>
+                    <GlobeIcon className="size-5 mr-1.5" /> Publish
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
