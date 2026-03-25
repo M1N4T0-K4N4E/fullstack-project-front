@@ -452,8 +452,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get server logs
-         * @description Fetch the most recent server logs from the database (admin only)
+         * Get server logs (paginated)
+         * @description Fetch server logs from the database with pagination (admin only)
          */
         get: operations["getServerLogs"];
         put?: never;
@@ -472,8 +472,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get user interactions
-         * @description Fetch the most recent user interactions from the database (admin only)
+         * Get user interactions (paginated)
+         * @description Fetch user interactions from the database with pagination (admin only)
          */
         get: operations["getUserInteractions"];
         put?: never;
@@ -1885,6 +1885,7 @@ export interface operations {
                             email?: string | null;
                             name?: string | null;
                             role?: string | null;
+                            status?: string | null;
                             avatarUrl?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
@@ -1962,6 +1963,7 @@ export interface operations {
                             email?: string | null;
                             name?: string | null;
                             role?: string | null;
+                            status?: string | null;
                             avatarUrl?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
@@ -2046,6 +2048,7 @@ export interface operations {
                             email?: string | null;
                             name?: string | null;
                             role?: string | null;
+                            status?: string | null;
                             avatarUrl?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
@@ -2112,26 +2115,37 @@ export interface operations {
     };
     getServerLogs: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (starts at 1) */
+                page?: number;
+                /** @description Number of logs per page */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Server logs list */
+            /** @description Paginated logs list */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        id?: string;
-                        level?: string;
-                        message?: string;
-                        meta?: Record<string, never> | null;
-                        createdAt?: string;
-                    }[];
+                        data?: {
+                            id?: string;
+                            level?: string;
+                            message?: string;
+                            meta?: Record<string, never> | null;
+                            createdAt?: string;
+                        }[];
+                        total?: number;
+                        page?: number;
+                        limit?: number;
+                        totalPages?: number;
+                    };
                 };
             };
             /** @description Error response */
@@ -2171,31 +2185,43 @@ export interface operations {
     };
     getUserInteractions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (starts at 1) */
+                page?: number;
+                /** @description Number of interactions per page */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description User interactions list */
+            /** @description Paginated user interactions list */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        id?: string;
-                        userId?: string;
-                        userEmail?: string;
-                        method?: string;
-                        path?: string;
-                        status?: number;
-                        durationMs?: number;
-                        ip?: string | null;
-                        userAgent?: string | null;
-                        createdAt?: string;
-                    }[];
+                        data?: {
+                            id?: string;
+                            userId?: string;
+                            userEmail?: string;
+                            action?: string;
+                            method?: string;
+                            path?: string;
+                            status?: number;
+                            durationMs?: number;
+                            ip?: string | null;
+                            userAgent?: string | null;
+                            createdAt?: string;
+                        }[];
+                        total?: number;
+                        page?: number;
+                        limit?: number;
+                        totalPages?: number;
+                    };
                 };
             };
             /** @description Error response */
