@@ -1809,6 +1809,13 @@
   resolved "https://registry.npmjs.org/@tiptap/extensions/-/extensions-3.20.5.tgz"
   integrity sha512-c4am6SznqfMnbUNSh4MvufiD7cMLdqL1BArok22uBgSWkS1sB9RVBYe8+x0jrOkk0UPEVlzDHbQ+nU+WmIyS2Q==
 
+"@tiptap/markdown@^3.20.5":
+  version "3.20.5"
+  resolved "https://registry.yarnpkg.com/@tiptap/markdown/-/markdown-3.20.5.tgz#08ac8f8d81a8f2614acadf176e8750b38b40fddc"
+  integrity sha512-meSibJEeCrh6kPJbdXUNnwexZEgdxWDRu7YzPml8TCy+Djo+g50YwzOfY5bfTYs7/mwGANJ7Y8OnWcnwT2IbzQ==
+  dependencies:
+    marked "^17.0.1"
+
 "@tiptap/pm@^3.20.5":
   version "3.20.5"
   resolved "https://registry.npmjs.org/@tiptap/pm/-/pm-3.20.5.tgz"
@@ -3979,6 +3986,11 @@ markdown-it@^14.0.0:
     mdurl "^2.0.0"
     punycode.js "^2.3.1"
     uc.micro "^2.1.0"
+
+marked@^17.0.1:
+  version "17.0.5"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-17.0.5.tgz#8fc6878a439463a007b05d346d2ad50a87ec3f0e"
+  integrity sha512-6hLvc0/JEbRjRgzI6wnT2P1XuM1/RrrDEX0kPt0N7jGm1133g6X7DlxFasUIx+72aKAr904GTxhSLDrd5DIlZg==
 
 math-intrinsics@^1.1.0:
   version "1.1.0"

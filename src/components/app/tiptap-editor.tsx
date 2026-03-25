@@ -1,10 +1,12 @@
 'use client';
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Tiptap, EditorProvider, EditorContext } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Button } from '@/components/ui/button';
 import { BoldIcon, ItalicIcon, Heading1Icon, Heading2Icon, Heading3Icon, ListIcon, ListOrderedIcon, QuoteIcon, Undo2Icon, Redo2Icon, MinusIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Markdown } from '@tiptap/markdown'
+import { useMemo } from 'react';
 
 interface TiptapEditorProps {
   content: string;
@@ -15,6 +17,7 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
+      Markdown,
       StarterKit.configure({
         codeBlock: false,
         code: false,
@@ -24,7 +27,10 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-  });
+    contentType: 'markdown',
+  }, [content]);
+
+  const editorMemo = useMemo(() => ({ editor }), [editor])
 
   if (!editor) return null;
 
@@ -142,10 +148,12 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           <Redo2Icon className="size-3.5" />
         </Button>
       </div>
-      <EditorContent
-        editor={editor}
-        className="max-w-none px-4 py-3 min-h-[200px] focus-within:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[180px]"
-      />
+      <EditorContext.Provider value={editorMemo}>
+        <EditorContent
+          editor={editor}
+          className="max-w-none px-4 py-3 min-h-[200px] focus-within:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[180px]"
+        />
+      </EditorContext.Provider>
     </div>
   );
 }

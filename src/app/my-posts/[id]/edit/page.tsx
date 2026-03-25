@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { OGLDefaultFragment, OGLDefaultVertex } from '@/components/app/ogl/default';
@@ -20,6 +20,13 @@ import Link from 'next/link';
 import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
+
+const EMPTY_POST = {
+  title: '',
+  content: '',
+  vertex: OGLDefaultVertex,
+  fragment: OGLDefaultFragment,
+};
 
 const editPostSchema = z.object({
   title: z.string({ error: 'Title is required' }).min(1, 'Title is required').max(100, 'Title must be 100 characters or less'),
@@ -42,7 +49,6 @@ export default function EditPostPage() {
 
   const { user, isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
   const [post, setPost] = useState<PostData | null>(null);
-  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (hasHydrated && (!isAuthenticated || !user)) {
@@ -62,26 +68,10 @@ export default function EditPostPage() {
           fragment: data.post.fragment ?? OGLDefaultFragment,
         });
       } else {
-        setNotFound(true);
+        router.push('/my-posts');
       }
     });
-  }, [hasHydrated, postId, isAuthenticated]);
-
-  useEffect(() => {
-    if (notFound) router.push('/my-posts');
-  }, [notFound, router]);
-
-  if (!hasHydrated || !isAuthenticated || !user || !post) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <SiteHeader />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  }, [hasHydrated, postId, isAuthenticated, getAuthClient, router]);
 
   const handleSubmit = async (values: PostData) => {
     const c = getAuthClient();
@@ -98,11 +88,25 @@ export default function EditPostPage() {
   };
 
   const formik = useFormik({
-    initialValues: post,
+    initialValues: post ?? EMPTY_POST,
     enableReinitialize: true,
     validationSchema: toFormikValidationSchema(editPostSchema),
     onSubmit: handleSubmit,
   });
+
+  const uniforms = useMemo(() => UNIFORM_DEFAULT(UNIFORMS(formik.values.fragment)), [formik.values.fragment, formik.values.vertex])
+
+  if (!hasHydrated || !isAuthenticated || !user || !post) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SiteHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -138,7 +142,7 @@ export default function EditPostPage() {
 
               <div className="space-y-2">
                 <Label>Description</Label>
-                <TiptapEditor content={formik.values.content} onChange={(v: string) => formik.setFieldValue('content', v)} />
+                <TiptapEditor content={post.content} onChange={(v: string) => formik.setFieldValue('content', v)} />
               </div>
 
               <div className="space-y-2">
@@ -177,9 +181,7 @@ export default function EditPostPage() {
                       <OGL
                         vertex={formik.values.vertex}
                         fragment={formik.values.fragment}
-                        uniforms={(() => {
-                          try { return UNIFORM_DEFAULT(UNIFORMS(formik.values.fragment)); } catch { return {}; }
-                        })()}
+                        uniforms={uniforms}
                       />
                     </div>
                   </OGLProvider>
