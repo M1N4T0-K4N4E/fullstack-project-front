@@ -18,10 +18,16 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUpDown } from 'lucide-react';
 import { DateTime } from 'luxon';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function AdminActivityPage() {
   const logs = useAdminStore(s => s.logs);
+  const fetchLogs = useAdminStore(s => s.fetchLogs);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
   const [sorting, setSorting] = useState<SortingState>([{ id: 'timestamp', desc: true }]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
