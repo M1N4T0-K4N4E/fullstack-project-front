@@ -59,6 +59,7 @@ export default function MyPostsPage() {
   const router = useRouter();
   const { user, isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
   const [myPosts, setMyPosts] = useState<MyPost[]>([]);
+  const [ready, setReady] = useState(false)
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
@@ -78,11 +79,12 @@ export default function MyPostsPage() {
           removed: false,
           thumbnail: p.thumbnail ?? null,
         })));
+        setReady(true)
       }
     });
   }, [hasHydrated, isAuthenticated]);
 
-  if (!hasHydrated || !isAuthenticated || !user) {
+  if (!hasHydrated || !isAuthenticated || !user || !ready) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteHeader />
