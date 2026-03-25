@@ -137,7 +137,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
     if (!c) return;
     set({ isLoadingLogs: true });
     try {
-      const { data } = await c.GET('/api/logs/user', { query: { page, limit } });
+      const { data } = await c.GET('/api/logs/user', { params: { query: { page, limit } } });
       const mapped: ActivityLog[] = (data?.data ?? []).map((log) => {
         const path = log.path ?? '';
         const method = log.method ?? 'UNKNOWN';
