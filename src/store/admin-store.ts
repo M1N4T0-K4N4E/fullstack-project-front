@@ -37,11 +37,15 @@ interface AdminStore {
   users: ManagedUser[];
   logs: ActivityLog[];
   posts: Post[];
+  logsPage: number;
+  logsLimit: number;
+  logsTotal: number;
+  logsTotalPages: number;
   isLoadingUsers: boolean;
   isLoadingPosts: boolean;
   isLoadingLogs: boolean;
   fetchUsers: () => Promise<void>;
-  fetchLogs: () => Promise<void>;
+  fetchLogs: (page?: number, limit?: number) => Promise<void>;
   fetchPosts: () => Promise<void>;
   banUser: (id: string) => Promise<void>;
   unbanUser: (id: string) => void;
@@ -98,6 +102,10 @@ export const useAdminStore = create<AdminStore>((set) => ({
   users: [],
   logs: seedLogs,
   posts: [],
+  logsPage: 1,
+  logsLimit: 20,
+  logsTotal: 0,
+  logsTotalPages: 1,
   isLoadingUsers: false,
   isLoadingPosts: false,
   isLoadingLogs: false,
@@ -124,12 +132,12 @@ export const useAdminStore = create<AdminStore>((set) => ({
     }
   },
 
-  fetchLogs: async () => {
+  fetchLogs: async (page = 1, limit = 20) => {
     const c = getClient();
     if (!c) return;
     set({ isLoadingLogs: true });
     try {
-      const { data } = await c.GET('/api/logs/user', { query: { page: 1, limit: 100 } });
+      const { data } = await c.GET('/api/logs/user', { query: { page, limit } });
       const mapped: ActivityLog[] = (data?.data ?? []).map((log) => {
         const path = log.path ?? '';
         const method = log.method ?? 'UNKNOWN';
@@ -146,7 +154,13 @@ export const useAdminStore = create<AdminStore>((set) => ({
         };
       });
 
-      set({ logs: mapped });
+      set({
+        logs: mapped,
+        logsPage: data?.page ?? page,
+        logsLimit: data?.limit ?? limit,
+        logsTotal: data?.total ?? 0,
+        logsTotalPages: data?.totalPages ?? 1,
+      });
     } finally {
       set({ isLoadingLogs: false });
     }

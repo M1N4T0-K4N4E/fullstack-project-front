@@ -5,7 +5,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -22,10 +21,15 @@ import { useEffect, useState } from 'react';
 
 export default function AdminActivityPage() {
   const logs = useAdminStore(s => s.logs);
+  const logsPage = useAdminStore(s => s.logsPage);
+  const logsTotal = useAdminStore(s => s.logsTotal);
+  const logsTotalPages = useAdminStore(s => s.logsTotalPages);
+  const logsLimit = useAdminStore(s => s.logsLimit);
+  const isLoadingLogs = useAdminStore(s => s.isLoadingLogs);
   const fetchLogs = useAdminStore(s => s.fetchLogs);
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs(1, 20);
   }, [fetchLogs]);
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'timestamp', desc: true }]);
@@ -76,7 +80,6 @@ export default function AdminActivityPage() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     state: { sorting, columnFilters },
   });
 
@@ -123,9 +126,9 @@ export default function AdminActivityPage() {
         </Table>
       </div>
       <div className="flex items-center justify-end gap-2 pt-4">
-        <span className="text-xs text-muted-foreground flex-1">{table.getFilteredRowModel().rows.length} log(s)</span>
-        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+        <span className="text-xs text-muted-foreground flex-1">{logsTotal} log(s) • Page {logsPage} / {logsTotalPages}</span>
+        <Button variant="outline" size="sm" onClick={() => fetchLogs(logsPage - 1, logsLimit)} disabled={isLoadingLogs || logsPage <= 1}>Previous</Button>
+        <Button variant="outline" size="sm" onClick={() => fetchLogs(logsPage + 1, logsLimit)} disabled={isLoadingLogs || logsPage >= logsTotalPages}>Next</Button>
       </div>
     </div>
   );
