@@ -37,7 +37,7 @@ export default function AdminActivityPage() {
 
   const columns: ColumnDef<ActivityLog>[] = [
     {
-      accessorKey: 'userName',
+      accessorKey: 'username',
       header: ({ column }) => (
         <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           User <ArrowUpDown className="size-3" />
@@ -92,8 +92,8 @@ export default function AdminActivityPage() {
       <div className="flex items-center">
         <Input
           placeholder="Filter by user…"
-          value={(table.getColumn('userName')?.getFilterValue() as string) ?? ''}
-          onChange={e => table.getColumn('userName')?.setFilterValue(e.target.value)}
+          value={(table.getColumn('username')?.getFilterValue() as string) ?? ''}
+          onChange={e => table.getColumn('username')?.setFilterValue(e.target.value)}
           className="max-w-xs h-8 text-sm"
         />
       </div>
