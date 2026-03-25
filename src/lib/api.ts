@@ -1,13 +1,11 @@
 import createClient from "openapi-fetch";
 import { paths } from "./path-api";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-export const client = createClient<paths>({ baseUrl: BASE_URL });
+export const client = createClient<paths>({ baseUrl: "/" });
 
 export function authClient(token: string) {
   return createClient<paths>({
-    baseUrl: BASE_URL,
+    baseUrl: "/",
     headers: { Authorization: `Bearer ${token}` },
   });
 }
