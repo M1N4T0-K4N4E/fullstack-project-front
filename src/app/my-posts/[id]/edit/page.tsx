@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
-import { authClient } from '@/lib/api';
 import { OGLDefaultFragment, OGLDefaultVertex } from '@/components/app/ogl/default';
 import { SiteHeader } from '@/components/app/site-header';
 import { Footer } from '@/components/app/footer';
@@ -18,7 +17,7 @@ import { OGLProvider } from '@/components/app/ogl/store';
 import { UNIFORMS, UNIFORM_DEFAULT } from '@/components/app/ogl/shader';
 import { ArrowLeftIcon, SaveIcon } from 'lucide-react';
 import Link from 'next/link';
-import { Formik, Form, Field } from 'formik';
+import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
 
@@ -41,22 +40,19 @@ export default function EditPostPage() {
   const params = useParams();
   const postId = params.id as string;
 
-  const { user, isAuthenticated, accessToken } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const { user, isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
   const [post, setPost] = useState<PostData | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
-
   useEffect(() => {
-    if (mounted && (!isAuthenticated || !user)) {
+    if (hasHydrated && (!isAuthenticated || !user)) {
       router.push('/login');
     }
-  }, [mounted, isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   useEffect(() => {
-    if (!mounted || !postId || !accessToken) return;
-    const c = authClient(accessToken);
+    if (!hasHydrated || !postId || !isAuthenticated) return;
+    const c = getAuthClient();
     c.GET('/api/posts/{id}', { params: { path: { id: postId } } }).then(({ data }) => {
       if (data?.post) {
         setPost({
@@ -69,13 +65,13 @@ export default function EditPostPage() {
         setNotFound(true);
       }
     });
-  }, [mounted, postId, accessToken]);
+  }, [hasHydrated, postId, isAuthenticated]);
 
   useEffect(() => {
     if (notFound) router.push('/my-posts');
   }, [notFound, router]);
 
-  if (!mounted || !isAuthenticated || !user || !post) {
+  if (!hasHydrated || !isAuthenticated || !user || !post) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteHeader />
@@ -88,8 +84,7 @@ export default function EditPostPage() {
   }
 
   const handleSubmit = async (values: PostData) => {
-    if (!accessToken) return;
-    const c = authClient(accessToken);
+    const c = getAuthClient();
     await c.PUT('/api/posts/{id}', {
       params: { path: { id: postId } },
       body: {
@@ -102,100 +97,98 @@ export default function EditPostPage() {
     router.push('/my-posts');
   };
 
+  const formik = useFormik({
+    initialValues: post,
+    enableReinitialize: true,
+    validationSchema: toFormikValidationSchema(editPostSchema),
+    onSubmit: handleSubmit,
+  });
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
-      <Formik
-        initialValues={post}
-        validationSchema={toFormikValidationSchema(editPostSchema)}
-        enableReinitialize
-        onSubmit={handleSubmit}
-      >
-        {({ values, errors, touched, setFieldValue, submitCount }) => (
-          <Form className="flex-1 flex flex-col">
-            <div className="px-6">
-              <div className="flex-1 w-full max-w-4xl mx-auto py-8 space-y-8 lg:max-w-6xl lg:grid lg:grid-cols-[1fr_360px] lg:gap-8 lg:space-y-0">
-                <div className="space-y-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Button variant="ghost" size="icon" className="size-8" asChild>
-                        <Link href="/my-posts">
-                          <ArrowLeftIcon className="size-4" />
-                        </Link>
-                      </Button>
-                      <div>
-                        <h1 className="text-xl font-semibold">Edit Post</h1>
-                        <p className="text-sm text-muted-foreground mt-0.5">Update your shader post</p>
-                      </div>
-                    </div>
-                    <Button size="lg" type="submit">
-                      <SaveIcon className="size-5 mr-1.5" /> Save
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Field as={Input} id="title" name="title" placeholder="Shader title…" />
-                    {errors.title && (touched.title || submitCount > 0) && (
-                      <p className="text-xs text-destructive">{errors.title}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <TiptapEditor content={values.content} onChange={(v: string) => setFieldValue('content', v)} />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Shader Code</Label>
-                    <Tabs defaultValue="vertex">
-                      <TabsList>
-                        <TabsTrigger value="vertex">vertex.glsl</TabsTrigger>
-                        <TabsTrigger value="fragment">fragment.glsl</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="vertex">
-                        <ShaderEditor name="vertex.glsl" value={values.vertex} onChange={(v: string) => {
-                          setFieldValue('vertex', v)
-                          console.log(v)
-                        }} />
-                        {errors.vertex && (touched.vertex || submitCount > 0) && (
-                          <p className="text-xs text-destructive mt-1">{errors.vertex}</p>
-                        )}
-                      </TabsContent>
-                      <TabsContent value="fragment">
-                        <ShaderEditor name="fragment.glsl" value={values.fragment} onChange={(v: string) => setFieldValue('fragment', v)} />
-                        {errors.fragment && (touched.fragment || submitCount > 0) && (
-                          <p className="text-xs text-destructive mt-1">{errors.fragment}</p>
-                        )}
-                      </TabsContent>
-                    </Tabs>
+      <form onSubmit={formik.handleSubmit} className="flex-1 flex flex-col">
+        <div className="px-6">
+          <div className="flex-1 w-full max-w-4xl mx-auto py-8 space-y-8 lg:max-w-6xl lg:grid lg:grid-cols-[1fr_360px] lg:gap-8 lg:space-y-0">
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="icon" className="size-8" asChild>
+                    <Link href="/my-posts">
+                      <ArrowLeftIcon className="size-4" />
+                    </Link>
+                  </Button>
+                  <div>
+                    <h1 className="text-xl font-semibold">Edit Post</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">Update your shader post</p>
                   </div>
                 </div>
+                <Button size="lg" type="submit">
+                  <SaveIcon className="size-5 mr-1.5" /> Save
+                </Button>
+              </div>
 
-                {/* Shader preview panel */}
-                <div className="hidden lg:block">
-                  <div className="sticky top-4 space-y-3">
-                    <p className="text-sm font-medium">Preview</p>
-                    <div className="rounded-md overflow-hidden border bg-black">
-                      <OGLProvider>
-                        <div className="aspect-square w-full *:size-full">
-                          <OGL
-                            vertex={values.vertex}
-                            fragment={values.fragment}
-                            uniforms={(() => {
-                              try { return UNIFORM_DEFAULT(UNIFORMS(values.fragment)); } catch { return {}; }
-                            })()}
-                          />
-                        </div>
-                      </OGLProvider>
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input id="title" name="title" placeholder="Shader title…" onChange={formik.handleChange} value={formik.values.title} />
+                {formik.errors.title && (formik.touched.title || formik.submitCount > 0) && (
+                  <p className="text-xs text-destructive">{formik.errors.title}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <TiptapEditor content={formik.values.content} onChange={(v: string) => formik.setFieldValue('content', v)} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Shader Code</Label>
+                <Tabs defaultValue="vertex">
+                  <TabsList>
+                    <TabsTrigger value="vertex">vertex.glsl</TabsTrigger>
+                    <TabsTrigger value="fragment">fragment.glsl</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="vertex">
+                    <ShaderEditor name="vertex.glsl" value={formik.values.vertex} onChange={(v: string) => {
+                      formik.setFieldValue('vertex', v)
+                      console.log(v)
+                    }} />
+                    {formik.errors.vertex && (formik.touched.vertex || formik.submitCount > 0) && (
+                      <p className="text-xs text-destructive mt-1">{formik.errors.vertex}</p>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="fragment">
+                    <ShaderEditor name="fragment.glsl" value={formik.values.fragment} onChange={(v: string) => formik.setFieldValue('fragment', v)} />
+                    {formik.errors.fragment && (formik.touched.fragment || formik.submitCount > 0) && (
+                      <p className="text-xs text-destructive mt-1">{formik.errors.fragment}</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+
+            {/* Shader preview panel */}
+            <div className="hidden lg:block">
+              <div className="sticky top-4 space-y-3">
+                <p className="text-sm font-medium">Preview</p>
+                <div className="rounded-md overflow-hidden border bg-black">
+                  <OGLProvider>
+                    <div className="aspect-square w-full *:size-full">
+                      <OGL
+                        vertex={formik.values.vertex}
+                        fragment={formik.values.fragment}
+                        uniforms={(() => {
+                          try { return UNIFORM_DEFAULT(UNIFORMS(formik.values.fragment)); } catch { return {}; }
+                        })()}
+                      />
                     </div>
-                  </div>
+                  </OGLProvider>
                 </div>
               </div>
             </div>
-          </Form>
-        )}
-      </Formik>
+          </div>
+        </div>
+      </form>
       <Footer />
     </div>
   );

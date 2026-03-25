@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
-import { authClient } from '@/lib/api';
 import { SiteHeader } from '@/components/app/site-header';
 import { Footer } from '@/components/app/footer';
 import { Badge } from '@/components/ui/badge';
@@ -13,13 +12,40 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FileTextIcon, PlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react';
-import { Formik, Form, Field } from 'formik';
+import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
 
 const createPostSchema = z.object({
   title: z.string({ error: 'Title is required' }).min(1, 'Title is required').max(100, 'Title must be 100 characters or less'),
 });
+
+function CreatePostForm({ onSubmit, onCancel }: { onSubmit: (title: string) => void; onCancel: () => void }) {
+  const formik = useFormik({
+    initialValues: { title: '' },
+    enableReinitialize: true,
+    validationSchema: toFormikValidationSchema(createPostSchema),
+    onSubmit: (values) => {
+      onSubmit(values.title);
+      formik.resetForm();
+    },
+  });
+  return (
+    <form onSubmit={formik.handleSubmit}>
+      <div className="space-y-1 py-2">
+        <label className="text-xs text-muted-foreground uppercase tracking-widest">Title</label>
+        <Input name="title" placeholder="Enter post title…" onChange={formik.handleChange} value={formik.values.title} />
+        {formik.errors.title && formik.touched.title && (
+          <p className="text-xs text-destructive">{formik.errors.title}</p>
+        )}
+      </div>
+      <DialogFooter>
+        <Button variant="outline" size="sm" type="button" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" type="submit">Create</Button>
+      </DialogFooter>
+    </form>
+  );
+}
 
 interface MyPost {
   id: string;
@@ -31,21 +57,18 @@ interface MyPost {
 
 export default function MyPostsPage() {
   const router = useRouter();
-  const { user, isAuthenticated, accessToken } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const { user, isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
   const [myPosts, setMyPosts] = useState<MyPost[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    if (hasHydrated && !isAuthenticated) router.push('/login');
+  }, [hasHydrated, isAuthenticated, router]);
 
   useEffect(() => {
-    if (mounted && !isAuthenticated) router.push('/login');
-  }, [mounted, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (!mounted || !isAuthenticated || !accessToken) return;
-    const c = authClient(accessToken);
+    if (!hasHydrated || !isAuthenticated) return;
+    const c = getAuthClient();
     c.GET('/api/posts/@me').then(({ data }) => {
       if (Array.isArray(data)) {
         setMyPosts(data.map((p) => ({
@@ -57,9 +80,9 @@ export default function MyPostsPage() {
         })));
       }
     });
-  }, [mounted, isAuthenticated, accessToken]);
+  }, [hasHydrated, isAuthenticated]);
 
-  if (!mounted || !isAuthenticated || !user) {
+  if (!hasHydrated || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteHeader />
@@ -72,8 +95,7 @@ export default function MyPostsPage() {
   }
 
   const handleCreate = async (title: string) => {
-    if (!accessToken) return;
-    const c = authClient(accessToken);
+    const c = getAuthClient();
     const { data } = await c.POST('/api/posts', { body: { title: title.trim() } });
     setCreateOpen(false);
     if (data?.postId) {
@@ -82,8 +104,8 @@ export default function MyPostsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deleteTarget || !accessToken) return;
-    const c = authClient(accessToken);
+    if (!deleteTarget) return;
+    const c = getAuthClient();
     await c.DELETE('/api/posts/{id}', { params: { path: { id: deleteTarget.id } } });
     setMyPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
     setDeleteTarget(null);
@@ -172,27 +194,7 @@ export default function MyPostsPage() {
           <DialogHeader>
             <DialogTitle>New Post</DialogTitle>
           </DialogHeader>
-          <Formik
-            initialValues={{ title: '' }}
-            validationSchema={toFormikValidationSchema(createPostSchema)}
-            onSubmit={(values) => handleCreate(values.title)}
-          >
-            {({ errors, touched }) => (
-              <Form>
-                <div className="space-y-1 py-2">
-                  <label className="text-xs text-muted-foreground uppercase tracking-widest">Title</label>
-                  <Field as={Input} name="title" placeholder="Enter post title…" />
-                  {errors.title && touched.title && (
-                    <p className="text-xs text-destructive">{errors.title}</p>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" size="sm" type="button" onClick={() => setCreateOpen(false)}>Cancel</Button>
-                  <Button size="sm" type="submit">Create</Button>
-                </DialogFooter>
-              </Form>
-            )}
-          </Formik>
+          <CreatePostForm onSubmit={(title) => handleCreate(title)} onCancel={() => setCreateOpen(false)} />
         </DialogContent>
       </Dialog>
 

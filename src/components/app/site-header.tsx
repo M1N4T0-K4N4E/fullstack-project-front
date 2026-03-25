@@ -10,7 +10,7 @@ import Avvvatars from "avvvatars-react"
 
 export const SiteHeader = () => {
   const router = useRouter()
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated, hasHydrated, logout } = useAuthStore()
 
   const handleLogout = () => {
     logout()
@@ -28,7 +28,9 @@ export const SiteHeader = () => {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/shader">Discover</Link>
           </Button>
-          {isAuthenticated && user ? (
+          {!hasHydrated ? (
+            <div className="w-8 h-8" />
+          ) : isAuthenticated && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
@@ -36,15 +36,13 @@ const NAV = [
 export default function ModeratorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
 
-  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    if (mounted && (!isAuthenticated || (user?.role !== 'moderator' && user?.role !== 'admin'))) router.push('/');
-  }, [mounted, isAuthenticated, user, router]);
+    if (hasHydrated && (!isAuthenticated || (user?.role !== 'moderator' && user?.role !== 'admin'))) router.push('/');
+  }, [hasHydrated, isAuthenticated, user, router]);
 
-  if (!mounted || !isAuthenticated || (user?.role !== 'moderator' && user?.role !== 'admin')) {
+  if (!hasHydrated || !isAuthenticated || (user?.role !== 'moderator' && user?.role !== 'admin')) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteHeader />

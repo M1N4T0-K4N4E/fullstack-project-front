@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState } from 'react';
-import { Formik, Form, Field } from 'formik';
+import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
 
@@ -19,6 +19,17 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading } = useAuthStore();
   const [error, setError] = useState('');
+
+  const formik = useFormik({
+    initialValues: { email: '', password: '' },
+    enableReinitialize: true,
+    validationSchema: toFormikValidationSchema(loginSchema),
+    onSubmit: async (values) => {
+      setError('');
+      const ok = await login(values.email, values.password);
+      if (!ok) setError('Invalid email or password.');
+    },
+  });
 
   useEffect(() => {
     if (isAuthenticated) router.push('/');
@@ -56,59 +67,49 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <Formik
-            initialValues={{ email: '', password: '' }}
-            validationSchema={toFormikValidationSchema(loginSchema)}
-            onSubmit={async (values) => {
-              setError('');
-              const ok = await login(values.email, values.password);
-              if (!ok) setError('Invalid email or password.');
-            }}
-          >
-            {({ errors, touched }) => (
-              <Form className="space-y-3">
-                <div className="space-y-1">
-                  <label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-widest">Email</label>
-                  <Field
-                    as={Input}
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    className="h-10"
-                  />
-                  {errors.email && touched.email && (
-                    <p className="text-xs text-destructive">{errors.email}</p>
-                  )}
-                </div>
+          <form onSubmit={formik.handleSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-widest">Email</label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                className="h-10"
+                onChange={formik.handleChange}
+                value={formik.values.email}
+              />
+              {formik.errors.email && formik.touched.email && (
+                <p className="text-xs text-destructive">{formik.errors.email}</p>
+              )}
+            </div>
 
-                <div className="space-y-1">
-                  <label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-widest">Password</label>
-                  <Field
-                    as={Input}
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    className="h-10"
-                  />
-                  {errors.password && touched.password && (
-                    <p className="text-xs text-destructive">{errors.password}</p>
-                  )}
-                </div>
+            <div className="space-y-1">
+              <label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-widest">Password</label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="h-10"
+                onChange={formik.handleChange}
+                value={formik.values.password}
+              />
+              {formik.errors.password && formik.touched.password && (
+                <p className="text-xs text-destructive">{formik.errors.password}</p>
+              )}
+            </div>
 
-                {error && (
-                  <p className="text-sm text-destructive pt-1">{error}</p>
-                )}
-
-                <Button type="submit" className="w-full h-10 mt-2" disabled={isLoading}>
-                  {isLoading ? 'Signing in…' : 'Sign in'}
-                </Button>
-              </Form>
+            {error && (
+              <p className="text-sm text-destructive pt-1">{error}</p>
             )}
-          </Formik>
+
+            <Button type="submit" className="w-full h-10 mt-2" disabled={isLoading}>
+              {isLoading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
         </div>
       </div>
     </div>

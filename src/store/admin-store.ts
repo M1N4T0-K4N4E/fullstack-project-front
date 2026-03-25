@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { User } from '@/types';
-import { authClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 
 export type UserStatus = 'active' | 'banned' | 'timed_out';
@@ -55,9 +54,11 @@ interface AdminStore {
 }
 
 function getClient() {
-  const token = useAuthStore.getState().accessToken;
-  if (!token) return null;
-  return authClient(token);
+  try {
+    return useAuthStore.getState().getAuthClient();
+  } catch {
+    return null;
+  }
 }
 
 const defaultVertex = `attribute vec2 uv;
@@ -121,7 +122,9 @@ export const useAdminStore = create<AdminStore>((set) => ({
   },
 
   fetchPosts: async () => {
-    const { data } = await (getClient() ?? authClient('')).GET('/api/posts');
+    const c = getClient();
+    if (!c) return;
+    const { data } = await c.GET('/api/posts');
     if (data) {
       const mapped: Post[] = (Array.isArray(data) ? data : []).map((p) => ({
         id: p.id ?? '',
