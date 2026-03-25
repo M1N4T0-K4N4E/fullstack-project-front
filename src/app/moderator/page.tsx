@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useAdminStore } from '@/store/admin-store';
 import { UsersIcon, TimerIcon, FileTextIcon, Trash2Icon } from 'lucide-react';
 
@@ -20,7 +21,12 @@ const StatCard = ({
 );
 
 export default function ModeratorOverviewPage() {
-  const { users, posts } = useAdminStore();
+  const { users, posts, fetchUsers, fetchPosts } = useAdminStore();
+
+  React.useEffect(() => {
+    fetchUsers();
+    fetchPosts();
+  }, []);
 
   const userStats = [
     { label: 'Total users', value: users.filter(u => u.role === 'user').length, icon: UsersIcon },

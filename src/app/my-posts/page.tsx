@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
-import { useAdminStore } from '@/store/admin-store';
+import { authClient } from '@/lib/api';
 import { SiteHeader } from '@/components/app/site-header';
 import { Footer } from '@/components/app/footer';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FileTextIcon, PlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react';
-import { DateTime } from 'luxon';
 import { Formik, Form, Field } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
@@ -22,19 +21,43 @@ const createPostSchema = z.object({
   title: z.string({ error: 'Title is required' }).min(1, 'Title is required').max(100, 'Title must be 100 characters or less'),
 });
 
+interface MyPost {
+  id: string;
+  title: string;
+  authorName: string;
+  removed: boolean;
+  thumbnail?: string | null;
+}
+
 export default function MyPostsPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
-  const { posts, createPost, deletePost } = useAdminStore();
+  const { user, isAuthenticated, accessToken } = useAuthStore();
   const [mounted, setMounted] = useState(false);
-
+  const [myPosts, setMyPosts] = useState<MyPost[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     if (mounted && !isAuthenticated) router.push('/login');
   }, [mounted, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!mounted || !isAuthenticated || !accessToken) return;
+    const c = authClient(accessToken);
+    c.GET('/api/posts/@me').then(({ data }) => {
+      if (Array.isArray(data)) {
+        setMyPosts(data.map((p) => ({
+          id: p.id ?? '',
+          title: p.title ?? '',
+          authorName: p.user?.name ?? '',
+          removed: false,
+          thumbnail: p.thumbnail ?? null,
+        })));
+      }
+    });
+  }, [mounted, isAuthenticated, accessToken]);
 
   if (!mounted || !isAuthenticated || !user) {
     return (
@@ -48,23 +71,28 @@ export default function MyPostsPage() {
     );
   }
 
-  const myPosts = posts.filter(p => p.authorId === user.id);
-
-  const handleCreate = (title: string) => {
-    createPost(title.trim(), user.id, user.name);
+  const handleCreate = async (title: string) => {
+    if (!accessToken) return;
+    const c = authClient(accessToken);
+    const { data } = await c.POST('/api/posts', { body: { title: title.trim() } });
     setCreateOpen(false);
+    if (data?.postId) {
+      router.push(`/my-posts/${data.postId}/edit`);
+    }
   };
 
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-    deletePost(deleteTarget.id);
+  const handleDelete = async () => {
+    if (!deleteTarget || !accessToken) return;
+    const c = authClient(accessToken);
+    await c.DELETE('/api/posts/{id}', { params: { path: { id: deleteTarget.id } } });
+    setMyPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
     setDeleteTarget(null);
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
-      <div className='px-6'>
+      <div className="px-6">
         <div className="flex-1 w-full max-w-6xl mx-auto py-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -91,9 +119,13 @@ export default function MyPostsPage() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {myPosts.map(post => (
+              {myPosts.map((post) => (
                 <div key={post.id} className={`group relative flex flex-col border rounded-md w-full overflow-hidden ${post.removed ? 'opacity-50' : ''}`}>
-                  <img className="object-cover aspect-video overflow-hidden w-full" src="/transition_02-ezgif.com-optimize-1.gif" alt="" />
+                  <img
+                    className="object-cover aspect-video overflow-hidden w-full"
+                    src={post.thumbnail ?? '/transition_02-ezgif.com-optimize-1.gif'}
+                    alt=""
+                  />
                   {post.removed && (
                     <div className="absolute top-2 left-2">
                       <Badge variant="destructive" className="text-[10px]">Removed</Badge>
@@ -121,15 +153,10 @@ export default function MyPostsPage() {
                       </DropdownMenu>
                     </div>
                   )}
-                  <div className="p-4 font-bold">
-                    {post.title}
-                  </div>
+                  <div className="p-4 font-bold">{post.title}</div>
                   <div className="mt-auto" />
                   <div className="border-t bg-card px-4 py-2 flex justify-between items-center">
                     <span className="text-sm">{user.name}</span>
-                    <div className="flex gap-4 text-xs text-muted-foreground">
-                      <span>{DateTime.fromISO(post.createdAt).toFormat('MMM dd, yyyy')}</span>
-                    </div>
                   </div>
                 </div>
               ))}
@@ -140,7 +167,7 @@ export default function MyPostsPage() {
       <Footer />
 
       {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={v => !v && setCreateOpen(false)}>
+      <Dialog open={createOpen} onOpenChange={(v) => !v && setCreateOpen(false)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>New Post</DialogTitle>
@@ -170,7 +197,7 @@ export default function MyPostsPage() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <Dialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>
+      <Dialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Post</DialogTitle>

@@ -8,7 +8,12 @@ import { highlight } from './shared'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 function InternalCodeBlock({ initial }: { initial?: Promise<JSX.Element> }) {
-  const [nodes, setNodes] = useState(initial)
+  const [nodes, setNodes] = useState<JSX.Element | null>(null)
+
+  useLayoutEffect(() => {
+    initial?.then((resolved) => setNodes(resolved))
+  }, [initial])
+
   return nodes ?? <p>Loading...</p>
 }
 

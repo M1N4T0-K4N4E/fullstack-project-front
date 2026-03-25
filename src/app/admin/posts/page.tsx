@@ -21,8 +21,10 @@ import { ArrowUpDown, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 export default function AdminPostsPage() {
-  const { posts, removePost, restorePost } = useAdminStore();
+  const { posts, removePost, restorePost, fetchPosts } = useAdminStore();
   const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  React.useEffect(() => { fetchPosts(); }, []);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
   const columns: ColumnDef<Post>[] = [

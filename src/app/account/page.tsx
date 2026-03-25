@@ -94,8 +94,8 @@ export default function AccountPage() {
                   <Formik
                     initialValues={{ value: user.name }}
                     validationSchema={toFormikValidationSchema(nameSchema)}
-                    onSubmit={(values) => {
-                      updateProfile({ name: values.value });
+                    onSubmit={async (values) => {
+                      await updateProfile({ name: values.value });
                       setEditing(null);
                     }}
                   >

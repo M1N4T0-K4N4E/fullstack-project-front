@@ -75,8 +75,10 @@ function TimeoutDialog({ user, open, onClose }: { user: ManagedUser | null; open
 }
 
 export default function ModeratorUsersPage() {
-  const { users } = useAdminStore();
+  const { users, fetchUsers } = useAdminStore();
   const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  React.useEffect(() => { fetchUsers(); }, []);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [timeoutTarget, setTimeoutTarget] = React.useState<ManagedUser | null>(null);
 

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
-import { useAdminStore } from '@/store/admin-store';
+import { authClient } from '@/lib/api';
+import { OGLDefaultFragment, OGLDefaultVertex } from '@/components/app/ogl/default';
 import { SiteHeader } from '@/components/app/site-header';
 import { Footer } from '@/components/app/footer';
 import { TiptapEditor } from '@/components/app/tiptap-editor';
@@ -28,33 +29,51 @@ const editPostSchema = z.object({
   fragment: z.string({ error: 'Fragment shader is required' }).min(1, 'Fragment shader cannot be empty'),
 });
 
+interface PostData {
+  title: string;
+  content: string;
+  vertex: string;
+  fragment: string;
+}
+
 export default function EditPostPage() {
   const router = useRouter();
   const params = useParams();
   const postId = params.id as string;
 
-  const { user, isAuthenticated } = useAuthStore();
-  const { posts, editPost } = useAdminStore();
+  const { user, isAuthenticated, accessToken } = useAuthStore();
   const [mounted, setMounted] = useState(false);
-
-  const post = posts.find(p => p.id === postId);
+  const [post, setPost] = useState<PostData | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (mounted && (!isAuthenticated || !user)) {
       router.push('/login');
-      return;
     }
-    if (mounted && post && post.authorId !== user?.id) {
-      router.push('/my-posts');
-      return;
-    }
-    if (mounted && !post) {
-      router.push('/my-posts');
-      return;
-    }
-  }, [mounted, isAuthenticated, user, post, router]);
+  }, [mounted, isAuthenticated, user, router]);
+
+  useEffect(() => {
+    if (!mounted || !postId || !accessToken) return;
+    const c = authClient(accessToken);
+    c.GET('/api/posts/{id}', { params: { path: { id: postId } } }).then(({ data }) => {
+      if (data?.post) {
+        setPost({
+          title: data.post.title ?? '',
+          content: data.post.context ?? '',
+          vertex: data.post.vertex ?? OGLDefaultVertex,
+          fragment: data.post.fragment ?? OGLDefaultFragment,
+        });
+      } else {
+        setNotFound(true);
+      }
+    });
+  }, [mounted, postId, accessToken]);
+
+  useEffect(() => {
+    if (notFound) router.push('/my-posts');
+  }, [notFound, router]);
 
   if (!mounted || !isAuthenticated || !user || !post) {
     return (
@@ -68,26 +87,33 @@ export default function EditPostPage() {
     );
   }
 
+  const handleSubmit = async (values: PostData) => {
+    if (!accessToken) return;
+    const c = authClient(accessToken);
+    await c.PUT('/api/posts/{id}', {
+      params: { path: { id: postId } },
+      body: {
+        title: values.title,
+        context: values.content,
+        vertex: values.vertex,
+        fragment: values.fragment,
+      },
+    });
+    router.push('/my-posts');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
       <Formik
-        initialValues={{
-          title: post.title,
-          content: post.content,
-          vertex: post.vertex,
-          fragment: post.fragment,
-        }}
+        initialValues={post}
         validationSchema={toFormikValidationSchema(editPostSchema)}
         enableReinitialize
-        onSubmit={(values) => {
-          editPost(postId, values);
-          router.push('/my-posts');
-        }}
+        onSubmit={handleSubmit}
       >
-        {({ values, errors, touched, setFieldValue }) => (
+        {({ values, errors, touched, setFieldValue, submitCount }) => (
           <Form className="flex-1 flex flex-col">
-            <div className='px-6'>
+            <div className="px-6">
               <div className="flex-1 w-full max-w-4xl mx-auto py-8 space-y-8 lg:max-w-6xl lg:grid lg:grid-cols-[1fr_360px] lg:gap-8 lg:space-y-0">
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
@@ -109,13 +135,8 @@ export default function EditPostPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
-                    <Field
-                      as={Input}
-                      id="title"
-                      name="title"
-                      placeholder="Shader title…"
-                    />
-                    {errors.title && touched.title && (
+                    <Field as={Input} id="title" name="title" placeholder="Shader title…" />
+                    {errors.title && (touched.title || submitCount > 0) && (
                       <p className="text-xs text-destructive">{errors.title}</p>
                     )}
                   </div>
@@ -133,14 +154,17 @@ export default function EditPostPage() {
                         <TabsTrigger value="fragment">fragment.glsl</TabsTrigger>
                       </TabsList>
                       <TabsContent value="vertex">
-                        <ShaderEditor name="vertex.glsl" value={values.vertex} onChange={(v: string) => setFieldValue('vertex', v)} />
-                        {errors.vertex && touched.vertex && (
+                        <ShaderEditor name="vertex.glsl" value={values.vertex} onChange={(v: string) => {
+                          setFieldValue('vertex', v)
+                          console.log(v)
+                        }} />
+                        {errors.vertex && (touched.vertex || submitCount > 0) && (
                           <p className="text-xs text-destructive mt-1">{errors.vertex}</p>
                         )}
                       </TabsContent>
                       <TabsContent value="fragment">
                         <ShaderEditor name="fragment.glsl" value={values.fragment} onChange={(v: string) => setFieldValue('fragment', v)} />
-                        {errors.fragment && touched.fragment && (
+                        {errors.fragment && (touched.fragment || submitCount > 0) && (
                           <p className="text-xs text-destructive mt-1">{errors.fragment}</p>
                         )}
                       </TabsContent>
@@ -155,7 +179,13 @@ export default function EditPostPage() {
                     <div className="rounded-md overflow-hidden border bg-black">
                       <OGLProvider>
                         <div className="aspect-square w-full *:size-full">
-                          <OGL vertex={values.vertex} fragment={values.fragment} uniforms={(() => { try { return UNIFORM_DEFAULT(UNIFORMS(values.fragment)) } catch { return {} } })()} />
+                          <OGL
+                            vertex={values.vertex}
+                            fragment={values.fragment}
+                            uniforms={(() => {
+                              try { return UNIFORM_DEFAULT(UNIFORMS(values.fragment)); } catch { return {}; }
+                            })()}
+                          />
                         </div>
                       </OGLProvider>
                     </div>

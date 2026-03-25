@@ -1,33 +1,56 @@
 'use client';
 
-import { useState } from 'react';
-import { useAdminStore } from '@/store/admin-store';
+import { useState, useEffect } from 'react';
+import { client } from '@/lib/api';
 import { SiteHeader } from '@/components/app/site-header';
 import { Footer } from '@/components/app/footer';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SearchIcon } from 'lucide-react';
-import { DateTime } from 'luxon';
 import Link from 'next/link';
 
 type SortOption = 'newest' | 'oldest' | 'title';
 
+interface ApiPost {
+  id: string;
+  title: string;
+  authorName: string;
+  thumbnail: string | null;
+  like: number;
+  dislike: number;
+}
+
 export default function DiscoverPage() {
-  const { posts } = useAdminStore();
+  const [posts, setPosts] = useState<ApiPost[]>([]);
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<SortOption>('newest');
+  const [sort, setSort] = useState<SortOption>('title');
 
-  const publicPosts = posts.filter(p => !p.removed);
+  useEffect(() => {
+    client.GET('/api/posts').then(({ data }) => {
+      if (data && Array.isArray(data)) {
+        setPosts(
+          data.map((p) => ({
+            id: p.id ?? '',
+            title: p.title ?? '',
+            authorName: p.user?.name ?? '',
+            thumbnail: p.thumbnail ?? null,
+            like: p.like ?? 0,
+            dislike: p.dislike ?? 0,
+          }))
+        );
+      }
+    });
+  }, []);
 
-  const filtered = publicPosts.filter(p =>
-    p.title.toLowerCase().includes(search.toLowerCase()) ||
-    p.authorName.toLowerCase().includes(search.toLowerCase())
+  const filtered = posts.filter(
+    (p) =>
+      p.title.toLowerCase().includes(search.toLowerCase()) ||
+      p.authorName.toLowerCase().includes(search.toLowerCase())
   );
 
   const sorted = [...filtered].sort((a, b) => {
-    if (sort === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (sort === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    return a.title.localeCompare(b.title);
+    if (sort === 'title') return a.title.localeCompare(b.title);
+    return 0;
   });
 
   return (
@@ -45,7 +68,7 @@ export default function DiscoverPage() {
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by title or author…"
                 className="pl-9"
               />
@@ -55,8 +78,6 @@ export default function DiscoverPage() {
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest first</SelectItem>
-                <SelectItem value="oldest">Oldest first</SelectItem>
                 <SelectItem value="title">Title A–Z</SelectItem>
               </SelectContent>
             </Select>
@@ -73,18 +94,24 @@ export default function DiscoverPage() {
             <>
               <p className="text-xs text-muted-foreground">{sorted.length} shader(s)</p>
               <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {sorted.map(post => (
-                  <Link key={post.id} href={`/shader/${post.id}/${encodeURIComponent(post.title.toLowerCase().replace(/\s+/g, '-'))}`} className="h-full">
+                {sorted.map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`/shader/${post.id}/${encodeURIComponent(post.title.toLowerCase().replace(/\s+/g, '-'))}`}
+                    className="h-full"
+                  >
                     <div className="group flex flex-col border rounded-md w-full h-full overflow-hidden hover:border-foreground/30 transition-colors">
-                      <img className="object-cover aspect-video overflow-hidden w-full" src="/transition_02-ezgif.com-optimize-1.gif" alt="" />
-                      <div className="p-4 font-bold line-clamp-2">
-                        {post.title}
-                      </div>
+                      <img
+                        className="object-cover aspect-video overflow-hidden w-full"
+                        src={post.thumbnail ?? '/transition_02-ezgif.com-optimize-1.gif'}
+                        alt=""
+                      />
+                      <div className="p-4 font-bold line-clamp-2">{post.title}</div>
                       <div className="mt-auto" />
                       <div className="border-t bg-card px-4 py-2 flex justify-between items-center">
                         <div className="text-sm">{post.authorName}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {DateTime.fromISO(post.createdAt).toFormat('MMM dd, yyyy')}
+                        <div className="text-xs text-muted-foreground flex gap-3">
+                          <span>♥ {post.like}</span>
                         </div>
                       </div>
                     </div>

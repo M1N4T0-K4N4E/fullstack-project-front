@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useAdminStore } from '@/store/admin-store';
-import { UsersIcon, BanIcon, TimerIcon, ShieldIcon, ActivityIcon, FileTextIcon, Trash2Icon, LayoutDashboardIcon } from 'lucide-react';
+import { UsersIcon, BanIcon, TimerIcon, ShieldIcon, ActivityIcon, FileTextIcon, Trash2Icon } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 const StatCard = ({
@@ -22,7 +23,12 @@ const StatCard = ({
 );
 
 export default function AdminOverviewPage() {
-  const { users, logs, posts } = useAdminStore();
+  const { users, logs, posts, fetchUsers, fetchPosts } = useAdminStore();
+
+  useEffect(() => {
+    fetchUsers();
+    fetchPosts();
+  }, []);
 
   const userStats = [
     { label: 'Total users',  value: users.length,                                   icon: UsersIcon },
