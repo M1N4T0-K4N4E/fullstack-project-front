@@ -1,7 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
 import { useState, useEffect, useMemo, CSSProperties } from 'react';
-import { client, authClient } from '@/lib/api';
+import { client } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import { CodeBlock } from '@/components/app/code-block/code-block';
 import { highlight } from '@/components/app/code-block/shared';
@@ -57,7 +57,7 @@ const ShaderPreview = ({ vertex, fragment }: { vertex: string; fragment: string 
 export default function ShaderDetailPage() {
   const params = useParams();
   const postId = params.id as string;
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { isAuthenticated, getAuthClient } = useAuthStore();
 
   const [post, setPost] = useState<PostData | null>(null);
   const [liked, setLiked] = useState(false);
@@ -85,11 +85,11 @@ export default function ShaderDetailPage() {
   }, [postId]);
 
   const handleLike = async () => {
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated) {
       toast.error('Sign in to like shaders');
       return;
     }
-    const c = authClient(accessToken);
+    const c = getAuthClient();
     await c.PUT('/api/posts/like/{id}', { params: { path: { id: postId } } });
     setLiked((prev) => !prev);
     setLikeCount((prev) => (liked ? prev - 1 : prev + 1));

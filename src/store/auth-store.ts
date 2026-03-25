@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, UserRole } from '@/types';
-import { client, authClient } from '@/lib/api';
+import { client, authClient, createAuthClientWithRefresh } from '@/lib/api';
 
 type UserRoleCreatable = Exclude<UserRole, 'admin'>;
 
@@ -16,6 +16,8 @@ interface AuthStore {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string, role: UserRoleCreatable) => Promise<boolean>;
   logout: () => void;
+  refreshAccessToken: () => Promise<boolean>;
+  getAuthClient: () => ReturnType<typeof authClient>;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
 }
 
@@ -105,6 +107,42 @@ export const useAuthStore = create<AuthStore>()(
           }).catch(() => {});
         }
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+      },
+
+      refreshAccessToken: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) return false;
+        try {
+          const { data, error } = await client.POST('/api/auth/refresh', {
+            body: { refreshToken },
+          });
+          if (error || !data?.token) {
+            // Refresh token is invalid — force logout
+            get().logout();
+            return false;
+          }
+          set({ accessToken: data.token });
+          return true;
+        } catch {
+          get().logout();
+          return false;
+        }
+      },
+
+      getAuthClient: () => {
+        const { accessToken, refreshToken } = get();
+        if (!accessToken) {
+          throw new Error('Not authenticated');
+        }
+        if (!refreshToken) {
+          return authClient(accessToken);
+        }
+        return createAuthClientWithRefresh({
+          accessToken,
+          refreshToken,
+          onTokenRefreshed: (newToken) => set({ accessToken: newToken }),
+          onRefreshFailed: () => get().logout(),
+        });
       },
 
       updateProfile: async (data: { name?: string; email?: string }) => {

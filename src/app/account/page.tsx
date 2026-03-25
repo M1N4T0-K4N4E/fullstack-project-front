@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { PencilIcon, CheckIcon, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Avvvatars from 'avvvatars-react';
-import { Formik, Form, Field } from 'formik';
+import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
 
@@ -23,18 +23,57 @@ const emailSchema = z.object({
   value: z.string({ error: 'Email is required' }).email('Please enter a valid email address'),
 });
 
+function InlineEditField({ initialValue, schema, onSave, onCancel }: {
+  initialValue: string;
+  schema: z.ZodObject<any>;
+  onSave: (value: string) => void;
+  onCancel: () => void;
+}) {
+  const formik = useFormik({
+    initialValues: { value: initialValue },
+    enableReinitialize: true,
+    validationSchema: toFormikValidationSchema(schema),
+    onSubmit: (values) => {
+      onSave(values.value);
+    },
+  });
+  return (
+    <form onSubmit={formik.handleSubmit} className="flex items-center gap-2">
+      <div>
+        <Input
+          name="value"
+          className="h-8 w-48 text-sm"
+          autoFocus
+          onChange={formik.handleChange}
+          value={formik.values.value}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === 'Escape') onCancel();
+          }}
+        />
+        {formik.errors.value && formik.touched.value && (
+          <p className="text-xs text-destructive mt-0.5">{formik.errors.value}</p>
+        )}
+      </div>
+      <Button variant="ghost" size="icon" className="size-7" type="submit">
+        <CheckIcon className="size-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="size-7" type="button" onClick={onCancel}>
+        <XIcon className="size-3.5" />
+      </Button>
+    </form>
+  );
+}
+
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout, updateProfile } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const { user, isAuthenticated, hasHydrated, logout, updateProfile } = useAuthStore();
   const [editing, setEditing] = useState<'name' | 'email' | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-    if (!isAuthenticated && mounted) router.push('/');
-  }, [isAuthenticated, mounted, router]);
+    if (hasHydrated && !isAuthenticated) router.push('/');
+  }, [isAuthenticated, hasHydrated, router]);
 
-  if (!mounted || !isAuthenticated || !user) {
+  if (!hasHydrated || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteHeader />
@@ -91,39 +130,15 @@ export default function AccountPage() {
               <div className="flex justify-between items-center py-3">
                 <span className="text-sm text-muted-foreground">Display name</span>
                 {editing === 'name' ? (
-                  <Formik
-                    initialValues={{ value: user.name }}
-                    validationSchema={toFormikValidationSchema(nameSchema)}
-                    onSubmit={async (values) => {
-                      await updateProfile({ name: values.value });
+                  <InlineEditField
+                    initialValue={user.name}
+                    schema={nameSchema}
+                    onSave={async (value) => {
+                      await updateProfile({ name: value });
                       setEditing(null);
                     }}
-                  >
-                    {({ errors, touched, submitForm }) => (
-                      <Form className="flex items-center gap-2">
-                        <div>
-                          <Field
-                            as={Input}
-                            name="value"
-                            className="h-8 w-48 text-sm"
-                            autoFocus
-                            onKeyDown={(e: React.KeyboardEvent) => {
-                              if (e.key === 'Escape') setEditing(null);
-                            }}
-                          />
-                          {errors.value && touched.value && (
-                            <p className="text-xs text-destructive mt-0.5">{errors.value}</p>
-                          )}
-                        </div>
-                        <Button variant="ghost" size="icon" className="size-7" type="submit">
-                          <CheckIcon className="size-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="size-7" type="button" onClick={() => setEditing(null)}>
-                          <XIcon className="size-3.5" />
-                        </Button>
-                      </Form>
-                    )}
-                  </Formik>
+                    onCancel={() => setEditing(null)}
+                  />
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{user.name}</span>
@@ -137,39 +152,15 @@ export default function AccountPage() {
               <div className="flex justify-between items-center py-3">
                 <span className="text-sm text-muted-foreground">Email</span>
                 {editing === 'email' ? (
-                  <Formik
-                    initialValues={{ value: user.email }}
-                    validationSchema={toFormikValidationSchema(emailSchema)}
-                    onSubmit={(values) => {
-                      updateProfile({ email: values.value });
+                  <InlineEditField
+                    initialValue={user.email}
+                    schema={emailSchema}
+                    onSave={(value) => {
+                      updateProfile({ email: value });
                       setEditing(null);
                     }}
-                  >
-                    {({ errors, touched }) => (
-                      <Form className="flex items-center gap-2">
-                        <div>
-                          <Field
-                            as={Input}
-                            name="value"
-                            className="h-8 w-48 text-sm"
-                            autoFocus
-                            onKeyDown={(e: React.KeyboardEvent) => {
-                              if (e.key === 'Escape') setEditing(null);
-                            }}
-                          />
-                          {errors.value && touched.value && (
-                            <p className="text-xs text-destructive mt-0.5">{errors.value}</p>
-                          )}
-                        </div>
-                        <Button variant="ghost" size="icon" className="size-7" type="submit">
-                          <CheckIcon className="size-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="size-7" type="button" onClick={() => setEditing(null)}>
-                          <XIcon className="size-3.5" />
-                        </Button>
-                      </Form>
-                    )}
-                  </Formik>
+                    onCancel={() => setEditing(null)}
+                  />
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{user.email}</span>

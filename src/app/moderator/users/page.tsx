@@ -23,7 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Avvvatars from 'avvvatars-react';
 import { ArrowUpDown, TimerIcon } from 'lucide-react';
 import { DateTime } from 'luxon';
-import { Formik, Form } from 'formik';
+import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -34,42 +34,40 @@ const timeoutSchema = z.object({
 
 function TimeoutDialog({ user, open, onClose }: { user: ManagedUser | null; open: boolean; onClose: () => void }) {
   const timeoutUser = useAdminStore(s => s.timeoutUser);
+  const formik = useFormik({
+    initialValues: { duration: '30' },
+    enableReinitialize: true,
+    validationSchema: toFormikValidationSchema(timeoutSchema),
+    onSubmit: (values) => {
+      if (user) timeoutUser(user.id, Number(values.duration));
+      onClose();
+    },
+  });
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Timeout {user?.name}</DialogTitle>
         </DialogHeader>
-        <Formik
-          initialValues={{ duration: '30' }}
-          validationSchema={toFormikValidationSchema(timeoutSchema)}
-          onSubmit={(values) => {
-            if (user) timeoutUser(user.id, Number(values.duration));
-            onClose();
-          }}
-        >
-          {({ values, setFieldValue }) => (
-            <Form>
-              <div className="space-y-1 py-2">
-                <label className="text-xs text-muted-foreground uppercase tracking-widest">Duration</label>
-                <Select value={values.duration} onValueChange={(v) => setFieldValue('duration', v)}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="1440">24 hours</SelectItem>
-                    <SelectItem value="10080">7 days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" size="sm" type="button" onClick={onClose}>Cancel</Button>
-                <Button size="sm" type="submit">Apply timeout</Button>
-              </DialogFooter>
-            </Form>
-          )}
-        </Formik>
+        <form onSubmit={formik.handleSubmit}>
+          <div className="space-y-1 py-2">
+            <label className="text-xs text-muted-foreground uppercase tracking-widest">Duration</label>
+            <Select value={formik.values.duration} onValueChange={(v) => formik.setFieldValue('duration', v)}>
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+                <SelectItem value="1440">24 hours</SelectItem>
+                <SelectItem value="10080">7 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" type="button" onClick={onClose}>Cancel</Button>
+            <Button size="sm" type="submit">Apply timeout</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

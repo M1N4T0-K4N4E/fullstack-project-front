@@ -31,6 +31,7 @@
         "@paper-design/shaders-react": "^0.0.72",
         "@shaderfrog/glsl-parser": "^7.0.1",
         "@tanstack/react-table": "^8.21.3",
+        "@tiptap/markdown": "^3.20.5",
         "@tiptap/pm": "^3.20.5",
         "@tiptap/react": "^3.20.5",
         "@tiptap/starter-kit": "^3.20.5",
