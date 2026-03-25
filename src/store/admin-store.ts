@@ -39,7 +39,9 @@ interface AdminStore {
   posts: Post[];
   isLoadingUsers: boolean;
   isLoadingPosts: boolean;
+  isLoadingLogs: boolean;
   fetchUsers: () => Promise<void>;
+  fetchLogs: () => Promise<void>;
   fetchPosts: () => Promise<void>;
   banUser: (id: string) => Promise<void>;
   unbanUser: (id: string) => void;
@@ -98,6 +100,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
   posts: [],
   isLoadingUsers: false,
   isLoadingPosts: false,
+  isLoadingLogs: false,
 
   fetchUsers: async () => {
     const c = getClient();
@@ -118,6 +121,34 @@ export const useAdminStore = create<AdminStore>((set) => ({
       }
     } finally {
       set({ isLoadingUsers: false });
+    }
+  },
+
+  fetchLogs: async () => {
+    const c = getClient();
+    if (!c) return;
+    set({ isLoadingLogs: true });
+    try {
+      const { data } = await c.GET('/api/logs/user', { query: { page: 1, limit: 100 } });
+      const mapped: ActivityLog[] = (data?.data ?? []).map((log) => {
+        const path = log.path ?? '';
+        const method = log.method ?? 'UNKNOWN';
+        const status = log.status ?? 0;
+        const target = path ? `${method} ${path} [${status}]` : '—';
+
+        return {
+          id: log.id ?? `${log.userId ?? 'guest'}-${log.createdAt ?? Date.now()}`,
+          userId: log.userId ?? 'guest',
+          username: log.userEmail ?? 'Guest',
+          action: log.action ?? 'unknown',
+          target,
+          timestamp: log.createdAt ?? new Date().toISOString(),
+        };
+      });
+
+      set({ logs: mapped });
+    } finally {
+      set({ isLoadingLogs: false });
     }
   },
 
