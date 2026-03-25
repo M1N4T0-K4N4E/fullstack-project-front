@@ -2299,6 +2299,7 @@ export interface operations {
                             id?: string;
                             userId?: string;
                             userEmail?: string;
+                            userRole?: string;
                             action?: string;
                             method?: string;
                             path?: string;
