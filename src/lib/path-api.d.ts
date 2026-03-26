@@ -1323,6 +1323,7 @@ export interface operations {
                             thumbnail?: string | null;
                             like?: number;
                             dislike?: number;
+                            isUserLiked?: boolean;
                             vertex?: string | null;
                             fragment?: string | null;
                             createdAt?: string;
