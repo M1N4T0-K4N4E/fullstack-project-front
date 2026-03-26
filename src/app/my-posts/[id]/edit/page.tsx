@@ -26,6 +26,7 @@ const EMPTY_POST = {
   content: '',
   vertex: OGLDefaultVertex,
   fragment: OGLDefaultFragment,
+  isPublic: false,
 };
 
 const editPostSchema = z.object({
@@ -40,6 +41,7 @@ interface PostData {
   content: string;
   vertex: string;
   fragment: string;
+  isPublic: boolean;
 }
 
 export default function EditPostPage() {
@@ -49,6 +51,7 @@ export default function EditPostPage() {
 
   const { user, isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
   const [post, setPost] = useState<PostData | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     if (hasHydrated && (!isAuthenticated || !user)) {
@@ -66,6 +69,7 @@ export default function EditPostPage() {
           content: data.post.context ?? '',
           vertex: data.post.vertex ?? OGLDefaultVertex,
           fragment: data.post.fragment ?? OGLDefaultFragment,
+          isPublic: data.post.isPublic ?? false,
         });
       } else {
         router.push('/my-posts');
@@ -85,6 +89,20 @@ export default function EditPostPage() {
       },
     });
     router.push('/my-posts');
+  };
+
+  const handlePublish = async () => {
+    if (isPublishing || post?.isPublic) return;
+    setIsPublishing(true);
+    const c = getAuthClient();
+    try {
+      await c.PUT('/api/posts/posts/{id}/publish', {
+        params: { path: { id: postId } },
+      });
+      setPost((prev) => (prev ? { ...prev, isPublic: true } : prev));
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const formik = useFormik({
@@ -131,10 +149,8 @@ export default function EditPostPage() {
                   <Button size="lg" type="submit">
                     <SaveIcon className="size-5 mr-1.5" /> Save
                   </Button>
-                  <Button size="lg" type='button' onClick={() => {
-                    console.log("HI")
-                  }}>
-                    <GlobeIcon className="size-5 mr-1.5" /> Publish
+                  <Button size="lg" type='button' onClick={handlePublish} disabled={post.isPublic || isPublishing} variant={post.isPublic ? 'outline' : 'default'}>
+                    <GlobeIcon className="size-5 mr-1.5" /> {post.isPublic ? 'Published' : isPublishing ? 'Publishing…' : 'Publish'}
                   </Button>
                 </div>
               </div>
