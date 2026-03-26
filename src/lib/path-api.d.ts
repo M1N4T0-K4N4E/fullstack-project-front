@@ -360,6 +360,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/posts/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Restore a post
+         * @description Restore a deleted post by ID
+         */
+        patch: operations["restorePost"];
+        trace?: never;
+    };
     "/api/roles": {
         parameters: {
             query?: never;
@@ -1115,6 +1135,7 @@ export interface operations {
                             thumbnail?: string | null;
                             like?: number;
                             dislike?: number;
+                            isDeleted?: boolean;
                             createdAt?: string;
                             user?: {
                                 name?: string | null;
@@ -1250,6 +1271,7 @@ export interface operations {
                             thumbnail?: string | null;
                             like?: number;
                             dislike?: number;
+                            isDeleted?: boolean;
                             createdAt?: string;
                             user?: {
                                 name?: string | null;
@@ -1782,6 +1804,74 @@ export interface operations {
             };
         };
     };
+    restorePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Error response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: string;
+                    };
+                };
+            };
+            /** @description Error response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: string;
+                    };
+                };
+            };
+            /** @description Error response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: string;
+                    };
+                };
+            };
+            /** @description Error response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: string;
+                    };
+                };
+            };
+        };
+    };
     listRoles: {
         parameters: {
             query?: never;
@@ -1931,6 +2021,7 @@ export interface operations {
                             role?: string | null;
                             status?: string | null;
                             avatarUrl?: string | null;
+                            timeoutEnd?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
                         }[];
@@ -2002,6 +2093,7 @@ export interface operations {
                             role?: string | null;
                             status?: string | null;
                             avatarUrl?: string | null;
+                            timeoutEnd?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
                         };
@@ -2080,6 +2172,7 @@ export interface operations {
                             role?: string | null;
                             status?: string | null;
                             avatarUrl?: string | null;
+                            timeoutEnd?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
                         };
@@ -2165,6 +2258,7 @@ export interface operations {
                             role?: string | null;
                             status?: string | null;
                             avatarUrl?: string | null;
+                            timeoutEnd?: string | null;
                             createdAt?: string;
                             updatedAt?: string;
                         };
