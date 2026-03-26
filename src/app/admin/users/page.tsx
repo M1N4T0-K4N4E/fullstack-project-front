@@ -35,12 +35,16 @@ const timeoutSchema = z.object({
 
 function TimeoutDialog({ user, open, onClose }: { user: ManagedUser | null; open: boolean; onClose: () => void }) {
   const timeoutUser = useAdminStore(s => s.timeoutUser);
+  const fetchUsers = useAdminStore(s => s.fetchUsers);
   const formik = useFormik({
     initialValues: { duration: '30' },
     enableReinitialize: true,
     validationSchema: toFormikValidationSchema(timeoutSchema),
-    onSubmit: (values) => {
-      if (user) timeoutUser(user.id, Number(values.duration));
+    onSubmit: async (values) => {
+      if (user) {
+        await timeoutUser(user.id, Number(values.duration));
+        await fetchUsers();
+      }
       onClose();
     },
   });

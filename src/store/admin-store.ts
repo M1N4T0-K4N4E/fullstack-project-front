@@ -124,6 +124,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
           role: (u.role as ManagedUser['role']) ?? 'user',
           createdAt: u.createdAt ?? new Date().toISOString(),
           status: (u.status as UserStatus) ?? 'active',
+          timeoutUntil: u.timeoutEnd ?? undefined,
         }));
         set({ users: mapped });
       }
@@ -180,7 +181,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
         authorId: '',
         authorName: p.user?.name ?? '',
         createdAt: p.createdAt ?? new Date().toISOString(),
-        removed: false,
+        removed: p.isDeleted ?? false,
         thumbnail: p.thumbnail ?? null,
         like: p.like ?? 0,
         dislike: p.dislike ?? 0,
@@ -243,9 +244,14 @@ export const useAdminStore = create<AdminStore>((set) => ({
     }));
   },
 
-  restorePost: (id) => set((s) => ({
-    posts: s.posts.map((p) => (p.id === id ? { ...p, removed: false } : p)),
-  })),
+  restorePost: async (id) => {
+    const c = getClient();
+    if (!c) return;
+    await c.PATCH('/api/posts/{id}/restore', { params: { path: { id } } });
+    set((s) => ({
+      posts: s.posts.map((p) => (p.id === id ? { ...p, removed: false } : p)),
+    }));
+  },
 
   createPost: async (title, _authorId, _authorName) => {
     const c = getClient();
