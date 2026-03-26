@@ -27,9 +27,9 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     client.GET('/api/posts').then(({ data }) => {
-      if (data && Array.isArray(data)) {
+      if (data && Array.isArray(data?.data)) {
         setPosts(
-          data.map((p) => ({
+          data.data.map((p) => ({
             id: p.id ?? '',
             title: p.title ?? '',
             authorName: p.user?.name ?? '',

@@ -71,8 +71,8 @@ export default function MyPostsPage() {
     if (!hasHydrated || !isAuthenticated) return;
     const c = getAuthClient();
     c.GET('/api/posts/@me').then(({ data }) => {
-      if (Array.isArray(data)) {
-        setMyPosts(data.map((p) => ({
+      if (Array.isArray(data?.data)) {
+        setMyPosts(data.data.map((p) => ({
           id: p.id ?? '',
           title: p.title ?? '',
           authorName: p.user?.name ?? '',
