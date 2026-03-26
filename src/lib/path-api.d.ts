@@ -1136,6 +1136,7 @@ export interface operations {
                             like?: number;
                             dislike?: number;
                             isDeleted?: boolean;
+                            isPublic?: boolean;
                             createdAt?: string;
                             user?: {
                                 name?: string | null;
@@ -1272,6 +1273,7 @@ export interface operations {
                             like?: number;
                             dislike?: number;
                             isDeleted?: boolean;
+                            isPublic?: boolean;
                             createdAt?: string;
                             user?: {
                                 name?: string | null;
@@ -1326,6 +1328,7 @@ export interface operations {
                             isUserLiked?: boolean;
                             vertex?: string | null;
                             fragment?: string | null;
+                            isPublic?: boolean;
                             createdAt?: string;
                             user?: {
                                 name?: string | null;
