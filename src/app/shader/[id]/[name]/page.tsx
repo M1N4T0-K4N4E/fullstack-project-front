@@ -58,11 +58,12 @@ const ShaderPreview = ({ vertex, fragment }: { vertex: string; fragment: string 
 export default function ShaderDetailPage() {
   const params = useParams();
   const postId = params.id as string;
-  const { isAuthenticated, getAuthClient } = useAuthStore();
+  const { isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
 
   const [post, setPost] = useState<PostData | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     if (!postId) return;
@@ -89,14 +90,22 @@ export default function ShaderDetailPage() {
   }, [postId, getAuthClient, isAuthenticated]);
 
   const handleLike = async () => {
-    if (!isAuthenticated) {
-      toast.error('Sign in to like shaders');
+    if (!hasHydrated || !post || !isAuthenticated || isLiking) {
+      if (hasHydrated && !isAuthenticated) {
+        toast.error('Sign in to like shaders');
+      }
       return;
     }
-    const c = getAuthClient();
-    await c.PUT('/api/posts/like/{id}', { params: { path: { id: postId } } });
-    setLiked((prev) => !prev);
-    setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+    setIsLiking(true);
+    try {
+      const c = getAuthClient();
+      await c.PUT('/api/posts/like/{id}', { params: { path: { id: postId } } });
+      const nextLiked = !liked;
+      setLiked(nextLiked);
+      setLikeCount((prev) => (nextLiked ? prev + 1 : prev - 1));
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const handleCopyLink = () => {
@@ -106,6 +115,7 @@ export default function ShaderDetailPage() {
 
   const vertex = post?.vertex ?? OGLDefaultVertex;
   const fragment = post?.fragment ?? OGLDefaultFragment;
+  const isLikeDisabled = !hasHydrated || !post || !isAuthenticated || isLiking;
 
   return (
     <>
@@ -129,7 +139,7 @@ export default function ShaderDetailPage() {
           </div>
           <Separator orientation="vertical" className="my-2 shrink-0" />
           <div className="ml-auto" />
-          <Button onClick={handleLike}>
+          <Button onClick={handleLike} disabled={isLikeDisabled}>
             <HeartIcon fill={liked ? 'red' : 'none'} color={liked ? 'red' : undefined} />
             <div className="px-1">+{likeCount}</div>
           </Button>
