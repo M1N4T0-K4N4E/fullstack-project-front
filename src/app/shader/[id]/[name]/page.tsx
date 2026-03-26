@@ -29,6 +29,7 @@ interface PostData {
   authorName: string;
   like: number;
   dislike: number;
+  userLiked: boolean;
   thumbnail: string | null;
 }
 
@@ -65,7 +66,8 @@ export default function ShaderDetailPage() {
 
   useEffect(() => {
     if (!postId) return;
-    client.GET('/api/posts/{id}', { params: { path: { id: postId } } }).then(({ data }) => {
+    const requestClient = isAuthenticated ? getAuthClient() : client;
+    requestClient.GET('/api/posts/{id}', { params: { path: { id: postId } } }).then(({ data }) => {
       if (data?.post) {
         const p = data.post;
         setPost({
@@ -77,12 +79,14 @@ export default function ShaderDetailPage() {
           authorName: p.user?.name ?? '',
           like: p.like ?? 0,
           dislike: p.dislike ?? 0,
+          userLiked: p.isUserLiked ?? false,
           thumbnail: p.thumbnail ?? null,
         });
         setLikeCount(p.like ?? 0);
+        setLiked(p.isUserLiked ?? false);
       }
     });
-  }, [postId]);
+  }, [postId, getAuthClient, isAuthenticated]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
