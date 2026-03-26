@@ -18,6 +18,7 @@ interface AuthStore {
   logout: () => void;
   refreshAccessToken: () => Promise<boolean>;
   getAuthClient: () => ReturnType<typeof authClient>;
+  setAuthFromTokens: (accessToken: string, refreshToken: string) => Promise<boolean>;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
 }
 
@@ -143,6 +144,36 @@ export const useAuthStore = create<AuthStore>()(
           onTokenRefreshed: (newToken) => set({ accessToken: newToken }),
           onRefreshFailed: () => get().logout(),
         });
+      },
+
+      setAuthFromTokens: async (accessToken: string, refreshToken: string) => {
+        set({ isLoading: true });
+        try {
+          const c = authClient(accessToken);
+          const { data: accountData } = await c.GET('/api/account');
+          if (!accountData) {
+            set({ isLoading: false });
+            return false;
+          }
+          const user: User = {
+            id: accountData.id ?? '',
+            email: accountData.email ?? '',
+            name: accountData.name ?? '',
+            role: (accountData.role as UserRole) ?? 'user',
+            createdAt: accountData.createdAt ?? new Date().toISOString(),
+          };
+          set({
+            user,
+            accessToken,
+            refreshToken: refreshToken ?? null,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return true;
+        } catch {
+          set({ isLoading: false });
+          return false;
+        }
       },
 
       updateProfile: async (data: { name?: string; email?: string }) => {
