@@ -17,7 +17,7 @@ export default function LandingPage() {
       <SiteHeader />
       <div className="px-6 w-full py-4">
         <div className="py-2 w-full max-w-6xl mx-auto">
-          <div className="aspect-[20/9] relative flex items-center justify-center">
+          <div className="aspect-20/9 relative flex items-center justify-center">
             <SimplexNoise
               className='size-full'
               colors={["#ffffff", "#ff9e9e", "#5f57ff", "#00f7ff"]}
@@ -38,7 +38,7 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
-      <div className="flex flex-col bg-pink-300 justify-center h-[360px] my-12">
+      <div className="flex flex-col bg-pink-300 justify-center h-90 my-12">
         <div className='max-w-4xl flex flex-col items-center mx-auto text-background'>
           <div className='text-2xl font-bold mb-2'>
             Contribute to the library!
