@@ -53,7 +53,7 @@ interface AdminStore {
   promoteToModerator: (id: string) => Promise<void>;
   demoteModerator: (id: string) => Promise<void>;
   removePost: (id: string) => Promise<void>;
-  restorePost: (id: string) => void;
+  restorePost: (id: string) => Promise<void>;
   createPost: (title: string, authorId: string, authorName: string) => Promise<string | null>;
   editPost: (id: string, data: Partial<Pick<Post, 'title' | 'content' | 'vertex' | 'fragment'>>) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
