@@ -9,10 +9,10 @@ import { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import { z } from 'zod/v4';
 import { toFormikValidationSchema } from '@/lib/zod-formik';
-import { Chrome } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string({ error: 'Email is required' }).email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   password: z.string({ error: 'Password is required' }).min(1, 'Password is required'),
 });
 
@@ -124,12 +124,12 @@ export default function LoginPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              window.location.href = '/api/auth/google';
+              globalThis.location.href = '/api/auth/google';
             }}
             className="space-y-3"
           >
             <Button type="submit" variant="outline" className="w-full h-10">
-              <Chrome className="w-4 h-4 mr-2" />
+              <Globe className="w-4 h-4 mr-2" />
               Google
             </Button>
           </form>
