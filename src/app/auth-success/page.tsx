@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 
-export default function AuthSuccessPage() {
+function AuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuthFromTokens } = useAuthStore();
@@ -32,6 +32,12 @@ export default function AuthSuccessPage() {
   }, [searchParams, setAuthFromTokens, router]);
 
   return (
+    <AuthSuccessLoading />
+  );
+}
+
+function AuthSuccessLoading() {
+  return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm space-y-8">
         <div className="space-y-4 text-center">
@@ -46,5 +52,13 @@ export default function AuthSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthSuccessPage() {
+  return (
+    <Suspense fallback={<AuthSuccessLoading />}>
+      <AuthSuccessContent />
+    </Suspense>
   );
 }
