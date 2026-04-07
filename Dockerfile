@@ -10,8 +10,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+COPY .env.prod ./.env.prod
+
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable && yarn build
+RUN set -a && . ./.env.prod && set +a && corepack enable && yarn build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

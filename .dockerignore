@@ -1,0 +1,12 @@
+node_modules
+.next
+coverage
+.turbo
+dist
+.git
+.gitignore
+.vscode
+tests
+src/**/*.test.*
+src/**/*.spec.*
+README*
