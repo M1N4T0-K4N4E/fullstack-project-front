@@ -1,5 +1,5 @@
 'use client'
-import { Color, Mesh, Program, Renderer, Triangle } from "ogl"
+import { Mesh, Program, Renderer, Triangle } from "ogl"
 import { useEffect, useRef } from "react"
 import { useOGLContext } from "./store"
 import { PROGRAM_UNIFORMS } from "./shader"
