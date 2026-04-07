@@ -30,7 +30,7 @@ vi.mock('@/components/ui/input', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  Chrome: () => <svg data-testid="google-icon" />,
+  Globe: () => <svg data-testid="google-icon" />,
 }));
 
 import LoginPage from '@/app/login/page';
@@ -78,7 +78,7 @@ describe('login page', () => {
     const submitButtons = screen.getAllByRole('button', { name: 'Sign in' });
     fireEvent.click(submitButtons[0]);
 
-    expect(await screen.findByText('Email is required')).toBeInTheDocument();
+    expect(await screen.findByText('Please enter a valid email address')).toBeInTheDocument();
     expect(screen.getByText('Password is required')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), { target: { value: 'john@example.com' } });

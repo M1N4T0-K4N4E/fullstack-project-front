@@ -25,6 +25,7 @@
 /.scannerwork/
 *.pem
 sonar-project.properties
+.sonarlint/
 
 # debug
 npm-debug.log*
