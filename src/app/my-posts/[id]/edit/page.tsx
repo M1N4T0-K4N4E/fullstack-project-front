@@ -105,6 +105,12 @@ export default function EditPostPage() {
     }
   };
 
+  const getPublishButtonText = () => {
+    if (post?.isPublic) return 'Published';
+    if (isPublishing) return 'Publishing…';
+    return 'Publish';
+  };
+
   const formik = useFormik({
     initialValues: post ?? EMPTY_POST,
     enableReinitialize: true,
@@ -150,7 +156,7 @@ export default function EditPostPage() {
                     <SaveIcon className="size-5 mr-1.5" /> Save
                   </Button>
                   <Button size="lg" type='button' onClick={handlePublish} disabled={post.isPublic || isPublishing} variant={post.isPublic ? 'outline' : 'default'}>
-                    <GlobeIcon className="size-5 mr-1.5" /> {post.isPublic ? 'Published' : isPublishing ? 'Publishing…' : 'Publish'}
+                    <GlobeIcon className="size-5 mr-1.5" /> {getPublishButtonText()}
                   </Button>
                 </div>
               </div>
