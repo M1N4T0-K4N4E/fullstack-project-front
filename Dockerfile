@@ -2,7 +2,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 COPY package.json yarn.lock ./
-RUN corepack enable && yarn install --frozen-lockfile
+RUN corepack enable && yarn install --frozen-lockfile --network-concurrency 5
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -22,7 +22,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json yarn.lock ./
-RUN corepack enable && yarn install --frozen-lockfile
+RUN corepack enable && yarn install --frozen-lockfile --network-concurrency 5
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
