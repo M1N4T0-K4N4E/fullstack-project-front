@@ -124,7 +124,8 @@ export default function LoginPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              globalThis.location.href = '/api/auth/google';
+              const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
+              globalThis.location.href = apiBaseUrl ? `${apiBaseUrl}/api/auth/google` : '/api/auth/google';
             }}
             className="space-y-3"
           >
