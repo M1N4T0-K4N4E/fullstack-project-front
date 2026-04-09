@@ -240,10 +240,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List all posts
+         * List all posts of the authenticated user
          * @description Get a paginated list of own posts with user info
          */
-        get: operations["listPosts"];
+        get: operations["listSelfPosts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1246,7 +1246,7 @@ export interface operations {
             };
         };
     };
-    listPosts: {
+    listSelfPosts: {
         parameters: {
             query?: {
                 page?: number;
