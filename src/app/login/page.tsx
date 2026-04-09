@@ -13,7 +13,7 @@ import { Globe } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.email('Please enter a valid email address'),
-  password: z.string({ error: 'Password is required' }).min(1, 'Password is required'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export default function LoginPage() {
@@ -27,8 +27,8 @@ export default function LoginPage() {
     validationSchema: toFormikValidationSchema(loginSchema),
     onSubmit: async (values) => {
       setError('');
-      const ok = await login(values.email, values.password);
-      if (!ok) setError('Invalid email or password.');
+      const errorMessage = await login(values.email, values.password);
+      if (errorMessage) setError(errorMessage);
     },
   });
 

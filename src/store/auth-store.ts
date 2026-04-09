@@ -13,8 +13,8 @@ interface AuthStore {
   isLoading: boolean;
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string, role: UserRoleCreatable) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<string | null>;
+  register: (email: string, password: string, name: string, role: UserRoleCreatable) => Promise<string | null>;
   logout: () => void;
   refreshAccessToken: () => Promise<boolean>;
   getAuthClient: () => ReturnType<typeof authClient>;
@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthStore>()(
           });
           if (error || !data?.token) {
             set({ isLoading: false });
-            return false;
+            return error?.error ?? 'Login failed';
           }
           const c = authClient(data.token);
           const { data: accountData } = await c.GET('/api/account');
@@ -59,10 +59,10 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
-          return true;
+          return null;
         } catch {
           set({ isLoading: false });
-          return false;
+          return 'Login failed';
         }
       },
 
@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthStore>()(
           });
           if (error || !data?.token) {
             set({ isLoading: false });
-            return false;
+            return error?.error ?? 'Registration failed';
           }
           const c = authClient(data.token);
           const { data: accountData } = await c.GET('/api/account');
@@ -92,10 +92,10 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
-          return true;
+          return null;
         } catch {
           set({ isLoading: false });
-          return false;
+          return 'Registration failed';
         }
       },
 
