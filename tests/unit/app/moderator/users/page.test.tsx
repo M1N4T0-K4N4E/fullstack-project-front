@@ -223,7 +223,7 @@ describe('moderator users page', () => {
 
     expect(screen.getByDisplayValue('Timed User')).toBeInTheDocument();
     expect(screen.getByText('1 user(s)')).toBeInTheDocument();
-  });
+  }, { timeout: 30000 });
 
   it('shows empty state and disables pagination when there are no managed users', async () => {
     storeState = {

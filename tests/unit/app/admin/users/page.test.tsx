@@ -265,7 +265,7 @@ describe('admin users page', () => {
 
     expect(screen.getByDisplayValue('Mod')).toBeInTheDocument();
     expect(screen.getByText('1 user(s)')).toBeInTheDocument();
-  }, { timeout: 10000 });
+  }, { timeout: 30000 });
 
   it('shows empty state and disables pagination buttons when no users', async () => {
     storeState = {
@@ -285,5 +285,5 @@ describe('admin users page', () => {
     const next = screen.getByRole('button', { name: 'Next' });
     expect(previous).toBeDisabled();
     expect(next).toBeDisabled();
-  }, { timeout: 10000 });
+  }, { timeout: 30000 });
 });

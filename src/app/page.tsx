@@ -30,12 +30,12 @@ export default function LandingPage() {
               Welcome to shaderd
             </div>
           </div>
-          <div className='grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full my-4'>
+          {/* <div className='grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full my-4'>
             <ShaderCard url="/shader/1/hello" name="Transition Shader With Patterns" username='boon4681' like={10} dislike={10}></ShaderCard>
             <ShaderCard url="/shader/1/hello" name="Transition Shader With Patterns" username='boon4681' like={10} dislike={10}></ShaderCard>
             <ShaderCard url="/shader/1/hello" name="Transition Shader With Patterns" username='boon4681' like={10} dislike={10}></ShaderCard>
             <ShaderCard url="/shader/1/hello" name="Transition Shader With Patterns" username='boon4681' like={10} dislike={10}></ShaderCard>
-          </div>
+          </div> */}
         </div>
       </div>
       <div className="flex flex-col bg-pink-300 justify-center h-90 my-12">

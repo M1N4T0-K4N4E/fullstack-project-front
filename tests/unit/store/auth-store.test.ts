@@ -57,7 +57,7 @@ describe('useAuthStore', () => {
 
     const ok = await useAuthStore.getState().login('john@example.com', 'secret');
 
-    expect(ok).toBe(true);
+    expect(ok).toBe(null);
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
     expect(state.accessToken).toBe('t-1');
@@ -74,12 +74,12 @@ describe('useAuthStore', () => {
   it('handles login failures and exceptions', async () => {
     mocks.clientPost.mockResolvedValueOnce({ data: null, error: { message: 'bad' } });
     const failByError = await useAuthStore.getState().login('a@a.com', 'x');
-    expect(failByError).toBe(false);
+    expect(failByError).toBe('Login failed');
     expect(useAuthStore.getState().isLoading).toBe(false);
 
     mocks.clientPost.mockRejectedValueOnce(new Error('network'));
     const failByThrow = await useAuthStore.getState().login('a@a.com', 'x');
-    expect(failByThrow).toBe(false);
+    expect(failByThrow).toBe('Login failed');
     expect(useAuthStore.getState().isLoading).toBe(false);
   });
 
@@ -98,16 +98,16 @@ describe('useAuthStore', () => {
     });
 
     const ok = await useAuthStore.getState().register('reg@example.com', 'pw', 'Reg User', 'user');
-    expect(ok).toBe(true);
+    expect(ok).toBe(null);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
 
     mocks.clientPost.mockResolvedValueOnce({ data: null, error: { message: 'bad' } });
     const failByError = await useAuthStore.getState().register('reg@example.com', 'pw', 'Reg User', 'user');
-    expect(failByError).toBe(false);
+    expect(failByError).toBe('Registration failed');
 
     mocks.clientPost.mockRejectedValueOnce(new Error('network'));
     const failByThrow = await useAuthStore.getState().register('reg@example.com', 'pw', 'Reg User', 'user');
-    expect(failByThrow).toBe(false);
+    expect(failByThrow).toBe('Registration failed');
   });
 
   it('logs out with and without token', async () => {
@@ -259,7 +259,7 @@ describe('useAuthStore', () => {
     mocks.authClient.mockReturnValue(accountClient);
 
     mocks.clientPost.mockResolvedValueOnce({ data: { token: 'login-fallback' }, error: null });
-    expect(await useAuthStore.getState().login('fallback@example.com', 'pw')).toBe(true);
+    expect(await useAuthStore.getState().login('fallback@example.com', 'pw')).toBe(null);
     expect(useAuthStore.getState().user).toMatchObject({
       id: '',
       email: 'fallback@example.com',
@@ -274,7 +274,7 @@ describe('useAuthStore', () => {
     });
 
     mocks.clientPost.mockResolvedValueOnce({ data: { token: 'register-fallback' }, error: null });
-    expect(await useAuthStore.getState().register('reg-fallback@example.com', 'pw', 'Reg Name', 'user')).toBe(true);
+    expect(await useAuthStore.getState().register('reg-fallback@example.com', 'pw', 'Reg Name', 'user')).toBe(null);
     expect(useAuthStore.getState().user).toMatchObject({
       id: '',
       email: 'reg-fallback@example.com',

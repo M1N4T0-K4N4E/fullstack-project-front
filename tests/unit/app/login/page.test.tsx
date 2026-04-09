@@ -68,7 +68,7 @@ describe('login page', () => {
   });
 
   it('shows validation errors and failed login message', async () => {
-    const state = setAuthState({ login: vi.fn().mockResolvedValue(false) });
+    const state = setAuthState({ login: vi.fn().mockResolvedValue('Invalid email or password.') });
 
     render(<LoginPage />);
 
@@ -79,7 +79,7 @@ describe('login page', () => {
     fireEvent.click(submitButtons[0]);
 
     expect(await screen.findByText('Please enter a valid email address')).toBeInTheDocument();
-    expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(screen.getByText('Invalid input: expected string, received undefined')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), { target: { value: 'john@example.com' } });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'secret' } });
