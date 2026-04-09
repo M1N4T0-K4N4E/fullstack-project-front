@@ -7,6 +7,7 @@ import { Footer } from '@/components/app/footer';
 import { SimplexNoise } from '@paper-design/shaders-react';
 import { Button } from '@/components/ui/button';
 import { ShaderCard } from '@/components/app/shader-card';
+import Link from 'next/link';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -46,7 +47,9 @@ export default function LandingPage() {
           <div className='text-center'>
             Help build the largest library of shaders for the Godot game engine. Godot Shaders is only possible with the contributions from the community. So, if you have a shader you would like to share submit it now for everyone to see!
           </div>
-          <Button size="lg" className="mt-6 p-4">Upload a shader</Button>
+          <Link href={isAuthenticated ? "/upload" : "/register"}>
+            <Button size="lg" className="mt-6 p-4">Upload a shader</Button>
+          </Link>
         </div>
       </div>
       <Footer></Footer>
