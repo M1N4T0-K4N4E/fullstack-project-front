@@ -37,7 +37,9 @@ export default function ModeratorPostsPage() {
           Title <ArrowUpDown className="size-3" />
         </Button>
       ),
-      cell: ({ row }) => <span className="text-sm font-medium">{row.original.title}</span>,
+      cell: ({ row }) => <div className='font-medium max-w-[200px] text-ellipsis overflow-hidden'>
+        <span className="text-sm">{row.original.title}</span>,
+      </div>,
     },
     {
       accessorKey: 'authorName',

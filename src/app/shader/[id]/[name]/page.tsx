@@ -126,7 +126,7 @@ export default function ShaderDetailPage() {
       <div className="mt-4" />
       <div className="py-4">
         <div className="flex justify-between">
-          {isLoading ? <Skeleton className="h-9 w-64" /> : <div className="text-3xl pb-2">{post?.title ?? '…'}</div>}
+          {isLoading ? <Skeleton className="h-9 w-64" /> : <div className="text-3xl pb-2 text-ellipsis overflow-hidden">{post?.title ?? '…'}</div>}
           <Button variant="ghost" onClick={handleCopyLink}>
             <CopyIcon />
             Copy Link
