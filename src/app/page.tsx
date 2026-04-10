@@ -47,7 +47,7 @@ export default function LandingPage() {
           <div className='text-center'>
             Help build the largest library of shaders for the Godot game engine. Godot Shaders is only possible with the contributions from the community. So, if you have a shader you would like to share submit it now for everyone to see!
           </div>
-          <Link href={isAuthenticated ? "/upload" : "/register"}>
+          <Link href={isAuthenticated ? "/my-posts" : "/register"}>
             <Button size="lg" className="mt-6 p-4">Upload a shader</Button>
           </Link>
         </div>
