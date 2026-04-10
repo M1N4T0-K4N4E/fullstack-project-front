@@ -12,10 +12,14 @@ export const OGL = ({ vertex, fragment, uniforms }: React.PropsWithChildren<{ ve
   const meshRef = useRef<Mesh>(null)
   const geometryRef = useRef<Triangle>(null)
   const animRef = useRef<number>(0)
+  const resizer = useRef<ResizeObserver>(null)
 
   const resize = () => {
     const rect = ref.current?.getBoundingClientRect();
     if (!rect || !renderer.current) return;
+    if (meshRef.current?.program?.uniforms?.uResolution) {
+      meshRef.current.program.uniforms.uResolution.value = [rect.width, rect.height];
+    }
     renderer.current.setSize(rect.width, rect.height);
   }
 
@@ -26,16 +30,20 @@ export const OGL = ({ vertex, fragment, uniforms }: React.PropsWithChildren<{ ve
     const gl = renderer.current.gl;
     ref.current!.appendChild(gl.canvas);
     gl.clearColor(1, 1, 1, 1);
-    const observe = new ResizeObserver(resize)
-    observe.observe(ref.current!)
+    resizer.current = new ResizeObserver(resize)
+    resizer.current.observe(ref.current!)
     geometryRef.current = new Triangle(gl);
 
     resize();
     return () => {
-      observe.disconnect()
+      resizer.current?.disconnect()
       cancelAnimationFrame(animRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    resizer.current?.observe(ref.current!)
+  }, [ref.current])
 
   // Recreate program when vertex/fragment change
   useEffect(() => {

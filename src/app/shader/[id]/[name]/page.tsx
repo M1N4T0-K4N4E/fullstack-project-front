@@ -15,6 +15,7 @@ import { SiteHeader } from '@/components/app/site-header';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import Avvvatars from 'avvvatars-react';
 import { useControls, Leva, LevaInputs } from 'leva';
 import { CopyIcon, HeartIcon } from 'lucide-react';
@@ -61,6 +62,7 @@ export default function ShaderDetailPage() {
   const { isAuthenticated, hasHydrated, getAuthClient } = useAuthStore();
 
   const [post, setPost] = useState<PostData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
@@ -86,6 +88,8 @@ export default function ShaderDetailPage() {
         setLikeCount(p.like ?? 0);
         setLiked(p.isUserLiked ?? false);
       }
+    }).finally(() => {
+      setIsLoading(false);
     });
   }, [postId, getAuthClient, isAuthenticated]);
 
@@ -122,7 +126,7 @@ export default function ShaderDetailPage() {
       <div className="mt-4" />
       <div className="py-4">
         <div className="flex justify-between">
-          <div className="text-3xl pb-2">{post?.title ?? '…'}</div>
+          {isLoading ? <Skeleton className="h-9 w-64" /> : <div className="text-3xl pb-2">{post?.title ?? '…'}</div>}
           <Button variant="ghost" onClick={handleCopyLink}>
             <CopyIcon />
             Copy Link
@@ -135,7 +139,7 @@ export default function ShaderDetailPage() {
                 <Avvvatars border={false} size={24} style="shape" value={(post?.authorName ?? 'unknown').replace('@', '-')} />
               </AvatarFallback>
             </Avatar>
-            {post?.authorName ?? '…'}
+            {isLoading ? <Skeleton className="h-4 w-24" /> : (post?.authorName ?? '…')}
           </div>
           <Separator orientation="vertical" className="my-2 shrink-0" />
           <div className="ml-auto" />
@@ -149,7 +153,7 @@ export default function ShaderDetailPage() {
         <div className="relative">
           <div className="flex aspect-4/3 *:size-full *:max-h-full not-has-[[data-paper-shader]]:bg-header xs:aspect-3/2 md:aspect-16/9">
             <div className="flex overflow-hidden *:size-full data-resizable:resize [[style*='width']]:resize">
-              <ShaderPreview vertex={vertex} fragment={fragment} />
+              {isLoading ? <Skeleton className="size-full rounded-none" /> : <ShaderPreview vertex={vertex} fragment={fragment} />}
             </div>
           </div>
           <div
